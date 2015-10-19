@@ -201,6 +201,13 @@ Piece.prototype.checkShift = function() {
       }
     }
   }
+  if (flags.moveLeft3 & keysDown && !(lastKeys & flags.moveLeft3)) {
+    this.multiShift(-1, 3);
+    this.finesse++;
+  } else if (flags.moveRight3 & keysDown && !(lastKeys & flags.moveRight3)) {
+    this.multiShift(1, 3);
+    this.finesse++;
+  }
 }
 Piece.prototype.shift = function(direction) {
   this.arrDelay = 0;
@@ -225,6 +232,21 @@ Piece.prototype.shift = function(direction) {
     }
   } else if (this.moveValid(direction, 0, this.tetro)) {
     this.x += direction;
+  }
+}
+Piece.prototype.multiShift = function(direction, count) {
+  for (var i = 0; i < count && this.moveValid(direction, 0, this.tetro); ++i) {
+    this.x += direction;
+    if(this.gravity >= 20) {
+      this.checkFall();
+    }
+    if (flags.moveDown & keysDown) {
+      var grav = gravityArr[settings['Soft Drop'] + 1];
+      if (grav >= 20) // 20G softdrop vs. 20G das
+        this.y += this.getDrop(grav);
+      piece.shiftDown();
+      //piece.finesse++;
+    }
   }
 }
 Piece.prototype.shiftDown = function() {

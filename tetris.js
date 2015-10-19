@@ -527,6 +527,8 @@ var binds = {
   pause: 27,
   moveLeft: 37,
   moveRight: 39,
+  moveLeft3: 0,
+  moveRight3: 0,
   moveDown: 40,
   hardDrop: 32,
   holdPiece: 67,
@@ -544,6 +546,8 @@ var flags = {
   rotRight: 32,
   rotLeft: 64,
   rot180: 128,
+  moveRight3: 256,
+  moveLeft3: 512,
 };
 
 function resize() {
@@ -1256,6 +1260,10 @@ function keyUpDown(e) {
         keysDown |= flags.rotLeft;
       } else if (e.keyCode === binds.rot180) {
         keysDown |= flags.rot180;
+      } else if (e.keyCode === binds.moveLeft3) {
+        keysDown |= flags.moveLeft3;
+      } else if (e.keyCode === binds.moveRight3) {
+        keysDown |= flags.moveRight3;
       } else if (e.keyCode === binds.holdPiece) {
         keysDown |= flags.holdPiece;
       }
@@ -1276,6 +1284,10 @@ function keyUpDown(e) {
         keysDown ^= flags.rotLeft;
       } else if (e.keyCode === binds.rot180 && keysDown & flags.rot180) {
         keysDown ^= flags.rot180;
+      } else if (e.keyCode === binds.moveLeft3 && keysDown & flags.moveLeft3) {
+        keysDown ^= flags.moveLeft3;
+      } else if (e.keyCode === binds.moveRight3 && keysDown & flags.moveRight3) {
+        keysDown ^= flags.moveRight3;
       } else if (e.keyCode === binds.holdPiece && keysDown & flags.holdPiece) {
         keysDown ^= flags.holdPiece;
       }

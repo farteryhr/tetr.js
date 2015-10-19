@@ -190,7 +190,7 @@ function keysEncode(keys) {
   for(var i in keys) {
     curFrame = +i;
     curKeys = keys[i];
-    for(var xhb=0; xhb<8; xhb++) {
+    for(var xhb=0; xhb<10; xhb++) {
       if((curKeys ^ lastKeys) & (1 << xhb)) {
         writeVL4(arrHB, curFrame - lastFrame);
         arrHB.push(xhb);
