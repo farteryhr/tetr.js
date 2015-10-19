@@ -15,8 +15,19 @@ Stack.prototype.new = function(x, y) {
  * Adds tetro to the stack, and clears lines if they fill up.
  */
 Stack.prototype.addPiece = function(tetro) {
+  var lineClear = 0;
+  var isSpin = false;
   var once = false;
 
+  // spin check
+  if (
+    !piece.moveValid(-1, 0, piece.tetro) &&
+    !piece.moveValid( 1, 0, piece.tetro) &&
+    !piece.moveValid( 0,-1, piece.tetro)
+  ) {
+    isSpin = true;
+  }
+  
   // Add the piece to the stack.
   var range = [];
   var valid = false;
@@ -58,7 +69,7 @@ Stack.prototype.addPiece = function(tetro) {
     // Clear the line. This basically just moves down the stack.
     // TODO Ponder during the day and see if there is a more elegant solution.
     if (count === 10) {
-      lines++; // NOTE stats
+      lineClear++; // NOTE stats
       if (gametype === 4) { // dig race
         if (digLines.indexOf(row) !== -1) {
           digLines.splice(digLines.indexOf(row), 1);
@@ -71,6 +82,58 @@ Stack.prototype.addPiece = function(tetro) {
       }
     }
   }
+
+  var scoreAdd = bigInt(level + 1);
+  if (lineClear !== 0) {
+    //console.log("C"+combo+" B"+b2b)
+    if (isSpin) {
+      scoreAdd = scoreAdd.mul(
+        bigInt([800,1200,1600,2000][lineClear - 1])
+          .mul(bigInt(2).pow(b2b + combo))
+      );
+      b2b += 1;
+    } else if(lineClear === 4) {
+      scoreAdd = scoreAdd.mul(
+        bigInt(800)
+          .mul(bigInt(2).pow(b2b + combo))
+      );
+      b2b += 1;
+    } else {
+      scoreAdd = scoreAdd.mul(
+        bigInt([100,300,500,800][lineClear - 1])
+          .mul(bigInt(2).pow(combo))
+      );
+      b2b = 0;
+    }
+    combo += 1;
+  } else {
+    if (isSpin) {
+      scoreAdd = scoreAdd.mul(
+        bigInt(2).pow(bigInt(b2b))
+          .mul(bigInt(400))
+      );
+    } else {
+      scoreAdd = bigInt(0);
+    }
+    combo = 0;
+  }
+  lines += lineClear;
+  if (gametype === 1)
+    level = ~~(lines / 10);
+  score = score.add(scoreAdd.mul(bigInt(16).pow(allclear)));
+  
+  var pc = true;
+  for (var x = 0; x < 10; x++)
+    for (var y = 0; y < 22; y++)
+      if (this.grid[x][y])
+        pc = false;
+  if (pc) {
+    score = score.add(bigInt(1000000).mul(bigInt(16).pow(allclear)));
+    allclear ++;
+  }
+  
+  //if (scoreAdd.cmp(0) > 0)
+    //console.log(scoreAdd.toString());
 
   statsFinesse += piece.finesse - finesse[piece.index][piece.pos][column];
   piecesSet++; // NOTE Stats

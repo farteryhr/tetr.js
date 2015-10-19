@@ -155,6 +155,9 @@ function right(e) {
  * LocalStorage functions
  */
 function saveSetting(s) {
+  if (localStorage === void 0) {
+    localStorage = {};
+  }
   localStorage['version'] = version;
 
   document.getElementById(s)
@@ -164,6 +167,9 @@ function saveSetting(s) {
   localStorage['settings'] = JSON.stringify(mySettings);
 }
 function loadLocalData() {
+  if (localStorage === void 0) {
+    localStorage = {};
+  }
   if (localStorage['binds']) {
     binds = JSON.parse(localStorage.getItem('binds'));
     for (var i = 0, len = controlCells.length; i < len; i++) {
@@ -176,8 +182,14 @@ function loadLocalData() {
     localStorage.removeItem('binds');
   }
   if (localStorage['settings']) {
-    mySettings = JSON.parse(localStorage.getItem('settings'));
+    var storedSettings = JSON.parse(localStorage.getItem('settings'));
+    for (var i in mySettings) {
+      if (i in storedSettings) {
+        mySettings[i] = storedSettings[i];
+      }
+    }
   }
+  
 }
 
 loadLocalData();

@@ -22,7 +22,7 @@ function Piece() {
  */
 Piece.prototype.new = function(index) {
   // TODO if no arguments, get next grabbag piece
-  this.pos = 0;
+  this.pos = RotSys[settings.RotSys].initinfo[index][2];
   this.tetro = [];
   this.held = false;
   this.finesse = 0;
@@ -33,10 +33,10 @@ Piece.prototype.new = function(index) {
 
   // TODO Do this better. Make clone object func maybe.
   //for property in pieces, this.prop = piece.prop
-  this.tetro = pieces[index].tetro;
+  this.tetro = pieces[index].tetro[this.pos];
   this.kickData = pieces[index].kickData;
-  this.x = pieces[index].x;
-  this.y = pieces[index].y;
+  this.x = pieces[index].x + RotSys[settings.RotSys].initinfo[index][0];
+  this.y = pieces[index].y + RotSys[settings.RotSys].initinfo[index][1];
   this.index = index;
 
   // TODO ---------------- snip
@@ -50,7 +50,6 @@ Piece.prototype.new = function(index) {
   if (settings.Gravity !== 0) {
     this.gravity = gravityArr[settings.Gravity - 1];
   } else if (gametype === 1) { //Marathon
-    var level = ~~((lines)/10);
     if (level < 20) {
       this.gravity = [
         1/60, 1/30, 1/25, 1/20, 1/15, 1/12, 1/10, 1/8,  1/6,  1/6,
@@ -67,55 +66,71 @@ Piece.prototype.new = function(index) {
   
   // Check for blockout.
   if (!this.moveValid(0, 0, this.tetro)) {
+    this.dead = true;
     gameState = 9;
     msg.innerHTML = 'BLOCK OUT!';
     menu(3);
+    return;
   }
   
   piece.checkFall(); //real 20G !
 }
-Piece.prototype.rotate = function(direction) {
-
-  // Rotates tetromino.
-  var rotated = [];
-  if (direction === -1) {
-    for (var i = this.tetro.length - 1; i >= 0; i--) {
-      rotated[i] = [];
-      for (var row = 0; row < this.tetro.length; row++) {
-        rotated[i][this.tetro.length - 1 - row] = this.tetro[row][i];
-      }
-    }
-  } else {
-    for (var i = 0; i < this.tetro.length; i++) {
-      rotated[i] = [];
-      for (var row = this.tetro.length - 1; row >= 0; row--) {
-        rotated[i][row] = this.tetro[row][this.tetro.length - 1 - i];
-      }
-    }
-  }
-
-  // Goes thorugh kick data until it finds a valid move.
-  var curPos = this.pos.mod(4);
-  var newPos = (this.pos + direction).mod(4);
-
-  for (var x = 0, len = this.kickData[0].length; x < len; x++) {
+Piece.prototype.tryKickList = function(kickList, rotated, newPos, offsetX, offsetY) {
+  for (var k = 0, len = kickList.length; k < len; k++) {
     if (this.moveValid(
-    this.kickData[curPos][x][0] - this.kickData[newPos][x][0],
-    this.kickData[curPos][x][1] - this.kickData[newPos][x][1],
-    rotated
+      offsetX + kickList[k][0],
+      offsetY + kickList[k][1],
+      rotated
     )) {
-      this.x += this.kickData[curPos][x][0] -
-                this.kickData[newPos][x][0];
-      this.y += this.kickData[curPos][x][1] -
-                this.kickData[newPos][x][1];
+      this.x += offsetX + kickList[k][0];
+      this.y += offsetY + kickList[k][1];
       this.tetro = rotated;
       this.pos = newPos;
-      // TODO make 180 rotate count as one or just update finess 180s
-      //this.finesse++;
+      this.finesse++;
       break;
     }
   }
 }
+Piece.prototype.rotate = function(direction) {
+
+  // Goes thorugh kick data until it finds a valid move.
+  var curPos = this.pos.mod(4);
+  var newPos = (this.pos + direction).mod(4);
+  // Rotates tetromino.
+  var rotated = pieces[this.index].tetro[newPos];
+  var offsetX =
+    RotSys[settings.RotSys].offset[this.index][newPos][0] -
+    RotSys[settings.RotSys].offset[this.index][curPos][0];
+  var offsetY =
+    RotSys[settings.RotSys].offset[this.index][newPos][1] -
+    RotSys[settings.RotSys].offset[this.index][curPos][1];
+  if (settings.RotSys === 2) { //ARS
+    var kickList = [];
+    if (this.index === PieceI.index) {
+      if(curPos === 1 || curPos === 3)
+        kickList = [[ 0, 0],[+1, 0],[-1, 0],[+2, 0]];
+      else
+        kickList = [[ 0, 0],[ 0,-1],[ 0,-2]];
+    } else {
+      if (newPos === 0 ||
+        ((this.index === PieceS.index || this.index === PieceZ.index) && newPos === 2)
+      )
+        kickList = [[ 0, 0],[+1, 0],[-1, 0],[ 0,-1]];
+      else
+        kickList = [[ 0, 0],[+1, 0],[-1, 0]];
+    }
+    this.tryKickList(kickList, rotated, newPos, offsetX, offsetY);
+  } else {
+    var kickIndex = [ 1, -1 ,2].indexOf(direction); // kickDataDirectionIndex
+    var kickList;
+    if (settings.RotSys === 1)
+      kickList = WKTableCultris;
+    else
+      kickList = WKTableSRS[this.index][kickIndex][curPos];
+    this.tryKickList(kickList, rotated, newPos, offsetX, offsetY);
+  }
+}
+
 Piece.prototype.checkShift = function() {
   // Shift key pressed event.
   if (keysDown & flags.moveLeft && !(lastKeys & flags.moveLeft)) {
@@ -222,7 +237,10 @@ Piece.prototype.shiftDown = function() {
   }
 }
 Piece.prototype.hardDrop = function() {
-  this.y += this.getDrop(2147483647); /* farter */
+  var distance = this.getDrop(2147483647);
+  this.y += distance;
+  score = score.add(bigInt(distance + this.lockDelayLimit - this.lockDelay));
+  statisticsStack();
   this.lockDelay = this.lockDelayLimit;
 }
 Piece.prototype.getDrop = function(distance) {

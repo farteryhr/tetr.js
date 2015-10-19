@@ -205,6 +205,12 @@ nav a {
   font-size: 1.125em;
   display: block;
 }
+#score {
+  text-align: center;
+  font-weight: 900;
+  font-size: 0.9em;
+  display: block;
+}
 
 /* Menus */
 .menu {
@@ -316,6 +322,7 @@ nav a {
   height: 50%;
   font-family: 'Lucida Console';
   font-size: 0.5em;
+  word-wrap:break-word;
   word-break:break-all;
   background-color: #000;
   color: #bfb;

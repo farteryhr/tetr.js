@@ -8,6 +8,16 @@ the game so you know why some things are done a certain way.
 */
 'use strict';
 
+// boom.
+function ObjectClone(obj) {
+  var copy = (obj instanceof Array) ? [] : {};
+  for (var attr in obj) {
+    if (!obj.hasOwnProperty(attr)) continue;
+    copy[attr] = (typeof obj[attr] == "object")?ObjectClone(obj[attr]):obj[attr];
+  }
+  return copy;
+};
+
 /**
  * Playfield.
  */
@@ -22,10 +32,12 @@ var stats = document.getElementById('stats');
 var statsTime = document.getElementById('time');
 var statsLines = document.getElementById('line');
 var statsPiece = document.getElementById('piece');
+var statsScore = document.getElementById('score');
 var h3 = document.getElementsByTagName('h3');
 var set = document.getElementById('settings');
 var leaderboard = document.getElementById('leaderboard');
 var replaydata = document.getElementById('replaydata');
+var hidescroll = document.getElementById('hidescroll');
 
 // Get canvases and contexts
 var holdCanvas = document.getElementById('hold');
@@ -73,99 +85,159 @@ var nLayouts = 7, currLayout = -1 /* auto */;
  * Piece data
  */
 
-// NOTE y values are inverted since our matrix counts from top to bottom.
-var kickData = [
-  [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
-  [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],
-  [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
-  [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]]
-];
-var kickDataI = [
-  [[0, 0], [-1, 0], [2, 0], [-1, 0], [2, 0]],
-  [[-1, 0], [0, 0], [0, 0], [0, -1], [0, 2]],
-  [[-1, -1], [1, -1], [-2, -1], [1, 0], [-2, 0]],
-  [[0, -1], [0, -1], [0, -1], [0, 1], [0, -2]]
-];
-// TODO get rid of this lol.
-var kickDataO = [
-  [[0, 0]],
-  [[0, 0]],
-  [[0, 0]],
-  [[0, 0]]
-];
+// [r][x][y]
+var TetroI = [
+  [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]],
+  [[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]],
+  [[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]],
+  [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]]];
+var TetroJ = [
+  [[2,2,0,0],[0,2,0,0],[0,2,0,0],[0,0,0,0]],
+  [[0,0,0,0],[2,2,2,0],[2,0,0,0],[0,0,0,0]],
+  [[0,2,0,0],[0,2,0,0],[0,2,2,0],[0,0,0,0]],
+  [[0,0,2,0],[2,2,2,0],[0,0,0,0],[0,0,0,0]]];
+var TetroL = [
+  [[0,3,0,0],[0,3,0,0],[3,3,0,0],[0,0,0,0]],
+  [[0,0,0,0],[3,3,3,0],[0,0,3,0],[0,0,0,0]],
+  [[0,3,3,0],[0,3,0,0],[0,3,0,0],[0,0,0,0]],
+  [[3,0,0,0],[3,3,3,0],[0,0,0,0],[0,0,0,0]]];
+var TetroO = [
+  [[0,0,0,0],[4,4,0,0],[4,4,0,0],[0,0,0,0]],
+  [[0,0,0,0],[4,4,0,0],[4,4,0,0],[0,0,0,0]],
+  [[0,0,0,0],[4,4,0,0],[4,4,0,0],[0,0,0,0]],
+  [[0,0,0,0],[4,4,0,0],[4,4,0,0],[0,0,0,0]]];
+var TetroS = [
+  [[0,5,0,0],[5,5,0,0],[5,0,0,0],[0,0,0,0]],
+  [[0,0,0,0],[5,5,0,0],[0,5,5,0],[0,0,0,0]],
+  [[0,0,5,0],[0,5,5,0],[0,5,0,0],[0,0,0,0]],
+  [[5,5,0,0],[0,5,5,0],[0,0,0,0],[0,0,0,0]]];
+var TetroT = [
+  [[0,6,0,0],[6,6,0,0],[0,6,0,0],[0,0,0,0]],
+  [[0,0,0,0],[6,6,6,0],[0,6,0,0],[0,0,0,0]],
+  [[0,6,0,0],[0,6,6,0],[0,6,0,0],[0,0,0,0]],
+  [[0,6,0,0],[6,6,6,0],[0,0,0,0],[0,0,0,0]]];
+var TetroZ = [
+  [[7,0,0,0],[7,7,0,0],[0,7,0,0],[0,0,0,0]],
+  [[0,0,0,0],[0,7,7,0],[7,7,0,0],[0,0,0,0]],
+  [[0,7,0,0],[0,7,7,0],[0,0,7,0],[0,0,0,0]],
+  [[0,7,7,0],[7,7,0,0],[0,0,0,0],[0,0,0,0]]];
+var WKTableSRSI_R = [
+  [[ 0, 0],[-2, 0],[+1, 0],[-2,+1],[+1,-2]],
+  [[ 0, 0],[-1, 0],[+2, 0],[-1,-2],[+2,+1]],
+  [[ 0, 0],[+2, 0],[-1, 0],[+2,-1],[-1,+2]],
+  [[ 0, 0],[+1, 0],[-2, 0],[+1,+2],[-2,-1]]];
+var WKTableSRSI_L = [
+  [[ 0, 0],[-1, 0],[+2, 0],[-1,-2],[+2,+1]],
+  [[ 0, 0],[+2, 0],[-1, 0],[+2,-1],[-1,+2]],
+  [[ 0, 0],[+1, 0],[-2, 0],[+1,+2],[-2,-1]],
+  [[ 0, 0],[-2, 0],[+1, 0],[-2,+1],[+1,-2]]];
+var WKTableSRSI_2 = [
+  [[ 0, 0],[-1, 0],[-2, 0],[+1, 0],[+2, 0],[ 0,+1]],
+  [[ 0, 0],[ 0,+1],[ 0,+2],[ 0,-1],[ 0,-2],[-1, 0]],
+  [[ 0, 0],[+1, 0],[+2, 0],[-1, 0],[-2, 0],[ 0,-1]],
+  [[ 0, 0],[ 0,+1],[ 0,+2],[ 0,-1],[ 0,-2],[+1, 0]]];
+var WKTableSRSX_R = [
+  [[ 0, 0],[-1, 0],[-1,-1],[ 0,+2],[-1,+2]],
+  [[ 0, 0],[+1, 0],[+1,+1],[ 0,-2],[+1,-2]],
+  [[ 0, 0],[+1, 0],[+1,-1],[ 0,+2],[+1,+2]],
+  [[ 0, 0],[-1, 0],[-1,+1],[ 0,-2],[-1,-2]]];
+var WKTableSRSX_L = [
+  [[ 0, 0],[+1, 0],[+1,-1],[ 0,+2],[+1,+2]],
+  [[ 0, 0],[+1, 0],[+1,+1],[ 0,-2],[+1,-2]],
+  [[ 0, 0],[-1, 0],[-1,-1],[ 0,+2],[-1,+2]],
+  [[ 0, 0],[-1, 0],[-1,+1],[ 0,-2],[-1,-2]]];
+var WKTableSRSX_2 = [
+  [[ 0, 0],[+1, 0],[+2, 0],[+1,+1],[+2,+1],[-1, 0],[-2, 0],[-1,+1],[-2,+1],[ 0,-1],[+3, 0],[-3, 0]],
+  [[ 0, 0],[ 0,+1],[ 0,+2],[-1,+1],[-1,+2],[ 0,-1],[ 0,-2],[-1,-1],[-1,-2],[+1, 0],[ 0,+3],[ 0,-3]],
+  [[ 0, 0],[-1, 0],[-2, 0],[-1,-1],[-2,-1],[+1, 0],[+2, 0],[+1,-1],[+2,-1],[ 0,+1],[-3, 0],[+3, 0]],
+  [[ 0, 0],[ 0,+1],[ 0,+2],[+1,+1],[+1,+2],[ 0,-1],[ 0,-2],[+1,-1],[+1,-2],[-1, 0],[ 0,+3],[ 0,-3]]];
+var WKTableSRSI = [WKTableSRSI_R,WKTableSRSI_L,WKTableSRSI_2];
+var WKTableSRSX = [WKTableSRSX_R,WKTableSRSX_L,WKTableSRSX_2];
+var WKTableSRS = [WKTableSRSI,WKTableSRSX,WKTableSRSX,WKTableSRSX,WKTableSRSX,WKTableSRSX,WKTableSRSX];
+
+var WKTableCultris = [[ 0, 0],[-1, 0],[+1, 0],[ 0,+1],[-1,+1],[+1,+1],[-2, 0],[+2, 0],[ 0,-1]];
+
+var OffsetSRS = [
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]]];
+var OffsetARS = [
+  [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]]];
+
+//x, y, r
+var InitInfoSRS = [[0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0]];
+var InitInfoARS = [[0, 0, 0],[ 0,-1, 2],[ 0,-1, 2],[ 0, 0, 0],[ 0, 0, 0],[ 0,-1, 2],[ 0, 0, 0]];
+
+//SRS, C2, ARS
+var RotSys = [
+  {
+    initinfo: InitInfoSRS,
+    offset: OffsetSRS
+  },
+  {
+    initinfo: InitInfoSRS,
+    offset: OffsetSRS
+  },
+  {
+    initinfo: InitInfoARS,
+    offset: OffsetARS
+  }
+]
 
 // Define shapes and spawns.
 var PieceI = {
   index: 0,
-  x: 2,
-  y: -1,
-  kickData: kickDataI,
-  tetro: [
-    [0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 0],
-    [0, 0, 1, 0, 0],
-    [0, 0, 1, 0, 0],
-    [0, 0, 1, 0, 0]]
+  x: 3,
+  y: 0,
+  tetro: TetroI
 };
 var PieceJ = {
   index: 1,
   x: 3,
   y: 0,
-  kickData: kickData,
-  tetro: [
-    [2, 2, 0],
-    [0, 2, 0],
-    [0, 2, 0]]
+  tetro: TetroJ
 };
 var PieceL = {
   index: 2,
   x: 3,
   y: 0,
-  kickData: kickData,
-  tetro: [
-    [0, 3, 0],
-    [0, 3, 0],
-    [3, 3, 0]]
+  tetro: TetroL
 };
 var PieceO = {
   index: 3,
-  x: 4,
+  x: 3,
   y: 0,
-  kickData: kickDataO,
-  tetro: [
-    [4, 4],
-    [4, 4]]
+  tetro: TetroO
 };
 var PieceS = {
   index: 4,
   x: 3,
   y: 0,
-  kickData: kickData,
-  tetro: [
-    [0, 5, 0],
-    [5, 5, 0],
-    [5, 0, 0]]
+  tetro: TetroS
 };
 var PieceT = {
   index: 5,
   x: 3,
   y: 0,
-  kickData: kickData,
-  tetro: [
-    [0, 6, 0],
-    [6, 6, 0],
-    [0, 6, 0]]
+  tetro: TetroT
 };
 var PieceZ = {
   index: 6,
   x: 3,
   y: 0,
-  kickData: kickData,
-  tetro: [
-    [7, 0, 0],
-    [7, 7, 0],
-    [0, 7, 0]]
+  tetro: TetroZ
 };
+
 var pieces = [PieceI, PieceJ, PieceL, PieceO, PieceS, PieceT, PieceZ];
 
 // Finesse data
@@ -240,6 +312,7 @@ var mySettings = {
   Gravity: 0,
   'Soft Drop': 6,
   'Lock Delay': 30,
+  RotSys: 0,
   Size: 0,
   Sound: 0,
   Volume: 100,
@@ -249,14 +322,15 @@ var mySettings = {
   Outline: 1
 };
 
-var settings = mySettings; // used in current game; by reference; replaced for replay
+var settings = mySettings; // initialized by reference; replaced when game starts and replay
 
 var settingName = {
   DAS: "DAS 加速延迟",
   ARR: "ARR 重复延迟",
-  Gravity: "Gravity<br>下落速度",
-  'Soft Drop': "Soft Drop<br>软降速度",
-  'Lock Delay': "Lock Delay<br>锁定延迟",
+  Gravity: "Gravity<br />下落速度",
+  'Soft Drop': "Soft Drop<br />软降速度",
+  'Lock Delay': "Lock Delay<br />锁定延迟",
+  RotSys: "Rotation<br />旋转系统",
   Size: "Size 大小",
   Sound: "Sound 声音",
   Volume: "Volume 音量",
@@ -287,6 +361,7 @@ var setting = {
     return array;
   })(),
   'Lock Delay': range(0,101),
+  RotSys: ['Super', 'C2', 'ArikaEasy'],
   Size: ['Auto', 'Small', 'Medium', 'Large'],
   Sound: ['Off', 'On'],
   Volume: range(0, 101),
@@ -296,26 +371,26 @@ var setting = {
   Outline: ['Off', 'On']
 };
 var arrRowGen = {
-      'simple':
-      function(arr,offset,range,width) {
-        var holex = ~~(rng.next()*range)+offset;
-        for(var x = 0; x < width; x++){
-          arr[holex + x] = 0;
-        }
-      },
-      'simplemessy':
-      function(arr,ratio) {
-        var hashole = false;
-        for(var x = 0; x < 10; x++){
-          if(rng.next()>=ratio) {
-            hashole=true;
-            arr[x] = 0;
-          }
-        }
-        if(hashole===false){
-          arr[~~(rng.next()*10)] = 0;
-        }
-      },
+  'simple':
+  function(arr,offset,range,width) {
+    var holex = ~~(rng.next()*range)+offset;
+    for(var x = 0; x < width; x++){
+      arr[holex + x] = 0;
+    }
+  },
+  'simplemessy':
+  function(arr,ratio) {
+    var hashole = false;
+    for(var x = 0; x < 10; x++){
+      if(rng.next()>=ratio) {
+        hashole=true;
+        arr[x] = 0;
+      }
+    }
+    if(hashole===false){
+      arr[~~(rng.next()*10)] = 0;
+    }
+  },
 };
 
 var arrStages = [
@@ -428,8 +503,15 @@ var gameparams;
 // var dirtyHold, dirtyActive, dirtyStack, dirtyPreview;
 var lastX, lastY, lastPos, lastLockDelay, landed;
 
+// Scoreing related status
+var b2b;
+var combo;
+var level;
+var allclear;
+
 // Stats
 var lines;
+var score;
 var statsFinesse;
 var piecesSet;
 var startTime;
@@ -689,7 +771,7 @@ function resize() {
     piece.draw();
     stack.draw();
     preview.draw();
-    if (hold.piece) {
+    if (hold.piece !== void 0) {
       hold.draw();
     }
   } catch(e) {
@@ -734,11 +816,11 @@ function init(gt, params) {
     }
     gametype = replay.gametype;
     gameparams = replay.gameparams;
-    settings = replay.settings;
+    settings = replay.settings; // by reference
     rng.seed = replay.seed;
   } else {
     watchingReplay = false;
-    settings = mySettings; // by reference
+    settings = ObjectClone(mySettings); // by value: prevent from being modified when paused
     gametype = gt;
     gameparams = params || {};
     
@@ -757,8 +839,12 @@ function init(gt, params) {
   if(gametype === void 0) //sometimes happens.....
     gametype = 0;
 
-  if(gametype === 0)
+  if(gametype === 0) // sprint
     lineLimit = 40;
+  else if(gametype === 5) // score attack
+    lineLimit = 200;
+  else
+    lineLimit = 0;
 
   //Reset
   column = 0;
@@ -768,6 +854,7 @@ function init(gt, params) {
   //TODO Check if needed.
   piece.shiftDir = 0;
   piece.shiftReleased = true;
+  piece.dead = true;
 
   toGreyRow = 21;
   frame = 0;
@@ -779,8 +866,13 @@ function init(gt, params) {
   preview.init()
   //preview.draw();
 
+  b2b = 0;
+  combo = 0;
+  level = 0;
+  allclear = 0;
   statsFinesse = 0;
   lines = 0;
+  score = bigInt(0);
   piecesSet = 0;
 
   clear(stackCtx);
@@ -811,7 +903,7 @@ function init(gt, params) {
           stack.grid[x][y] = 8;
       }
     }
-    stack.draw();
+    //stack.draw(); //resize
   }
 
   menu();
@@ -830,6 +922,7 @@ function init(gt, params) {
   
   statistics();
   statisticsStack();
+  resize();
 }
 
 function range(start, end, inc) {
@@ -893,6 +986,16 @@ var rng = new (function() {
   }
 })();
 
+function scorestring(s, n){
+  var strsplit = s.split("");
+  var spacetoggle = 0;
+  for (var i = strsplit.length - 1 - 3; i >= 0; i -= 3) {
+    strsplit[i] += (spacetoggle === n-1 ?" ":"&#8239;");
+    spacetoggle = (spacetoggle + 1) % n;
+  }
+  return strsplit.join("");
+}
+
 /**
  * Draws the stats next to the tetrion.
  */
@@ -911,7 +1014,7 @@ function statistics() {
 function statisticsStack() {
   statsPiece.innerHTML = piecesSet;
 
-  if(gametype === 0)
+  if(gametype === 0 || gametype === 5)
     statsLines.innerHTML = lineLimit - lines;
   else if(gametype === 1)
     statsLines.innerHTML = lines;
@@ -929,6 +1032,8 @@ function statisticsStack() {
   else{
     statsLines.innerHTML = lines;
   }
+  
+  statsScore.innerHTML = scorestring(score.toString(), 2);
 }
 // ========================== View ============================================
 
@@ -1277,8 +1382,7 @@ function update() {
     piece.rotate(1);
     piece.finesse++;
   } else if (flags.rot180 & keysDown && !(lastKeys & flags.rot180)) {
-    piece.rotate(1);
-    piece.rotate(1);
+    piece.rotate(2);
     piece.finesse++;
   }
 
@@ -1342,17 +1446,17 @@ function update() {
       var ranks= [
         {t:300, u:"再见", b:"BYE."},
         {t:240, u:"终于……", b:"Finally..."},
-        {t:210, u:"一个能打的都没有", b:"Too slow."},
+        {t:210, u:"<small>你一定是在逗我</small>", b:"Too slow."},
         {t:180, u:"渣渣", b:"Well..."},
-        {t:160, u:"速度速度加快", b:"Go faster."},
-        {t:140, u:"还能再给力点么", b:"Any more?"},
-        {t:120, u:"2分钟太难了", b:"Can't beat 2 min."},
-        {t:100, u:"比乌龟快点了", b:"Wins turtles."},
+        {t:160, u:"<small>速度速度加快</small>", b:"Go faster."},
+        {t:140, u:"<small>还能再给力点么</small>", b:"Any more?"},
+        {t:120, u:"2分钟", b:"Beat 2 min."},
+        {t:100, u:"新世界", b:"New world."},
         {t: 90, u:"超越秒针", b:"1 drop/sec!"},
         {t: 80, u:"恭喜入门", b:"Not bad."},
         {t: 73, u:"渐入佳境", b:"Going deeper."},
         {t: 69, u:"就差10秒", b:"10 sec faster."},
-        {t: 62, u:"还有几秒", b:"Approaching."},
+        {t: 63, u:"还有几秒", b:"Approaching."},
         {t: 60, u:"最后一点", b:"Almost there!"},
         {t: 56, u:"1分钟就够了", b:"1-min Sprinter!"},
         {t: 53, u:"并不是沙包", b:"No longer rookie."},
@@ -1395,6 +1499,13 @@ function update() {
     }
   } else if (gametype === 1) { // Marathon
     if (settings.Gravity !== 0 && lines>=200) { // not Auto, limit to 200 Lines
+      gameState = 1;
+      msg.innerHTML = 'GREAT!';
+      piece.dead = true;
+      menu(3);
+    }
+  } else if (gametype === 5) { // Score Attack
+    if (lines>=lineLimit) { // not Auto, limit to 200 Lines
       gameState = 1;
       msg.innerHTML = 'GREAT!';
       piece.dead = true;
@@ -1513,34 +1624,52 @@ function gameLoop() {
   }
 }
 
+var playername=void 0;
+
+function requireplayername(){
+  if(playername===void 0)
+    playername=prompt("Enter your name for leaderboard: 请输入上榜大名：","");
+  if(playername===null)
+    playername="anonymous";
+  if(playername==="")
+    playername="unnamed";
+}
+
 function trysubmitscore() {
   if(watchingReplay)
     return;
+  var obj={};
   var time = scoreTime;
-  if(gametype===0 && gameState===1) // 40L
-    submitscore({
-      "mode":"sprint",
-      "score":lines,
-      "time":time
-    });
-  else if(gametype===3 && gameState===9) // dig
-    submitscore({
-      "mode":"dig" + (gameparams&&gameparams.digOffset?gameparams.digOffset:""),
-      "score":lines,
-      "time":time
-    });
-  else if(gametype===4 && gameState===1) // dig race
-    submitscore({
-      "mode":"digrace",
-      "score":lines,
-      "time":time
-    });
-  else if(gametype===1 && settings.Gravity === 0) { // marathon
-    submitscore({
-      "mode":"marathon",
-      "score":lines,
-      "time":time
-    });
+  
+  if(gametype===0) // 40L
+    obj.mode="sprint";
+  else if(gametype===3) // dig
+    obj.mode="dig" + (gameparams&&gameparams.digOffset?gameparams.digOffset:"");
+  else if(gametype===4) // dig race
+    obj.mode="digrace";
+  else if(gametype===1) // marathon
+    obj.mode="marathon";
+  else if(gametype===5) // score attack
+    obj.mode="score";
+  else
+    return;
+  
+  if(
+    (gametype===0 && gameState===1)||
+    (gametype===3 && gameState===9)||
+    (gametype===4 && gameState===1)||
+    (gametype===1 && settings.Gravity === 0)||
+    (gametype===5)
+  ){
+    requireplayername();
+    obj.lines=lines;
+    obj.time=time;
+    obj.score=score.toString();
+    obj.name=playername;
+    
+    submitscore(obj);
+  }else{
+    submitscore(obj);
   }
 }
 

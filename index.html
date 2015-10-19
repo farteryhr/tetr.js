@@ -38,6 +38,7 @@
     </ul>
 
     <table id=stats>
+      <tr><th id=score>0</th><th>Score 分</th></tr>
       <tr><td id=line>0</td><th>Line 行</th></tr>
       <tr><td id=piece>0</td><th>Piece 块</th></tr>
       <tr><th id=time>00:00.00</th></tr>
@@ -54,7 +55,7 @@
     </div>
 
     <nav class='menu on'>
-      <h1>Tetr.js - Dig v0.4</h1>
+      <h1>Tetr.js - Dig v0.51</h1>
       <p>forked from: <span onclick="window.location='http://simon.lc/tetr.js/'"><u>&gt;&gt;simonlc</u></span><br/>
       farter's Dig Mod</p>
       <ul>
@@ -63,6 +64,8 @@
         <!-- <li><a onclick=init(2)>Play Ultra</a></li> -->
         <li><a onclick="init(3,{digOffset:0})">⚠ Dig! 挖掘机</a></li>
         <li><a onclick="init(4)">☕ Dig Race 挖掘练习</a></li>
+        <li><a onclick="init(5)">✈ Zen 修仙模式</a></li>
+        
         <li><a onclick="menu(6,1)">Replay(α) 回放(测试)</a></li>
         <li><a onclick=menu(2)>✜ Controls 调整按键</a></li>
         <li><a onclick=menu(1)>☑ Settings 调整设定</a></li>
@@ -145,6 +148,7 @@
 </div>
 
 <canvas id=sprite></canvas>
+<script src=bigmin.js></script>
 <script src=tetris.js></script>
 <script src=piece.js></script>
 <script src=stack.js></script>

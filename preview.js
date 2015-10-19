@@ -43,12 +43,13 @@ Preview.prototype.gen = function() {
 Preview.prototype.draw = function() {
   clear(previewCtx);
   for (var i = 0; i < 6; i++) {
+    var initInfo = RotSys[settings.RotSys].initinfo[this.grabBag[i]];
     if (this.grabBag[i] === 0 || this.grabBag[i] === 3) {
-      draw(pieces[this.grabBag[i]].tetro, pieces[this.grabBag[i]].x - 3,
-           pieces[this.grabBag[i]].y + 2 + i * 3, previewCtx);
+      draw(pieces[this.grabBag[i]].tetro[initInfo[2]], pieces[this.grabBag[i]].x - 3,
+           pieces[this.grabBag[i]].y + 2 + initInfo[1] + i * 3, previewCtx);
     } else {
-      draw(pieces[this.grabBag[i]].tetro, pieces[this.grabBag[i]].x - 2.5,
-           pieces[this.grabBag[i]].y + 2 + i * 3, previewCtx);
+      draw(pieces[this.grabBag[i]].tetro[initInfo[2]], pieces[this.grabBag[i]].x - 2.5,
+           pieces[this.grabBag[i]].y + 2 + initInfo[1] + i * 3, previewCtx);
     }
   }
 }
