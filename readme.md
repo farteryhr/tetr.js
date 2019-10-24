@@ -1,4 +1,4 @@
-#tetr.js
+# tetr.js
 
 [Have a try](http://farter.tk/tetr.js) in your browser.
 
