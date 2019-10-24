@@ -1,6 +1,6 @@
 # tetr.js
 
-[Have a try](http://farter.tk/tetr.js) in your browser.
+[Have a try](http://farter.cn/tetr.js/) in your browser.
 
 ### Default Controls:
 
