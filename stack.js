@@ -17,6 +17,29 @@ Stack.prototype.new = function(x, y, hy) {
   
   this.dirty = true;
   this.statisticsDirty = true;
+  
+  var newRow = this.newRow();
+  for(var i = 0; i < this.width; i++) {
+    for(var j = 0; j < this.height; j++) {
+      this.grid[i][j] = newRow[i];
+    }
+  }
+}
+/**
+ * new "empty" row with widthLimit
+ */
+Stack.prototype.newRow = function() {
+  var row = [];
+  var wallLeft = 0, wallRight = this.width;
+  if (gameparams.widthLimit >= 4 && gameparams.widthLimit < this.width) {
+    // todo: for 3-right initial positions, should round up
+    wallLeft = (this.width - gameparams.widthLimit) >> 1;
+    wallRight = wallLeft + gameparams.widthLimit;
+  }
+  for (var i = 0; i < this.width; i++) {
+    row.push((wallLeft <= i && i < wallRight) ? void 0 : 8);
+  }
+  return row;
 }
 /**
  * Adds tetro to the stack, and clears lines if they fill up.
@@ -224,11 +247,18 @@ Stack.prototype.addPiece = function(piece) {
           }
         }
       }
+      
       if (!gameparams.fallMode) { // 0 normal 1 none 2+ others
+        var newRow = this.newRow();
         for (var y = row; y >= 0; y--) {
           for (var x = 0; x < this.width; x++) {
-            this.grid[x][y] = y === 0 ? void 0 : this.grid[x][y - 1];
+            this.grid[x][y] = y === 0 ? newRow[x] : this.grid[x][y - 1];
           }
+        }
+      } else if (gameparams.fallMode === 1) { // might be wall
+        var newRow = this.newRow();
+        for (var x = 0; x < this.width; x++) {
+          this.grid[x][row] = newRow[x];
         }
       }
       
