@@ -335,6 +335,10 @@ Stack.prototype.addPiece = function(piece) {
       }
     }
     
+    if(gameparams.tfmStackEachPiece===3){
+      this.rotStack180();
+    }
+    
     //if (scoreAdd.cmp(0) > 0)
       //console.log(scoreAdd.toString());
   } while(false); // gameover break
@@ -564,7 +568,42 @@ Stack.prototype.makeSomeArt = function(piece){
     this.rowRise(arrRow, piece);
   }
   this.toGreyRow = 0;
-  console.log(dc,bc,dx,dy,mod,bxy);
+}
+Stack.prototype.rotStack180 = function(){
+  // find top line
+  var topLine=this.height;
+  break2:for(var y=0;y<this.height;y++){
+    for(var x=0;x<this.width;x++){
+      if(this.grid[x][y]!==void 0){
+        topLine=y;
+        break break2;
+      }
+    }
+  }
+  var nLine=this.height-topLine;
+  // flip x
+  this.grid.reverse();
+  // flip y
+  for(var y=0;y<nLine>>1;y++){
+    var y0=topLine+y,y1=this.height-y-1;
+    for(var x=0;x<this.width;x++){
+      var c0=this.grid[x][y0],c1=this.grid[x][y1];
+      this.grid[x][y0]=c1;
+      this.grid[x][y1]=c0;
+    }
+  }
+  for(var y=topLine;y<this.height;y++){
+    for(var x=0;x<this.width;x++){
+      var c=this.grid[x][y];
+      if(c!==void 0){
+        this.grid[x][y]=(c&~cellFlags.maskConn)|((c&0x300)<<2)|((c&0xc00)>>2);
+      }
+    }
+  }
+  digLines.reverse();
+  for(var i=0;i<digLines.length;i++){
+    digLines[i]=this.height+topLine-1-digLines[i];
+  }
 }
 /**
  * single mino symmetry test
