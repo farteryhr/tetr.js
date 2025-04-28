@@ -23,6 +23,7 @@ function debugmsg(s){
 }
 
 var msg = $$('msg');
+var msgdiv = $$('msgdiv');
 var stats = $$('stats');
 var statsTime = $$('time');
 var statsLines = $$('line');
@@ -195,13 +196,14 @@ function resize() {
     
     // the big operations that forces DOM reflow
     if (lastNextSide !== nextSide) {
+      content.removeChild(c);
+      content.removeChild(b);
+      content.removeChild(d);
       if (nextSide === 1) {
-        content.innerHTML = "";
         content.appendChild(c);
         content.appendChild(b);
         content.appendChild(d);
       } else {
-        content.innerHTML = "";
         content.appendChild(d);
         content.appendChild(b);
         content.appendChild(c);
@@ -269,7 +271,7 @@ function resize() {
     stats.style.width = d.clientWidth + 'px';
 
     timeCanvas.width = d.clientWidth;
-    timeCanvas.height = timeCanvas.clientHeight || timeCanvas.offsetHeight || timeCanvas.getBoundingClientRect().height;
+    timeCanvas.height = timeCanvas.clientHeight || timeCanvas.offsetHeight;
     timeCtx.fillStyle = "#fff";
     timeCtx.font = 'bold 1.125em Roboto, "Trebuchet MS"';
     timeCtx.textAlign = "center";
@@ -1306,6 +1308,7 @@ function trysubmitscore() {
   if(gametype===0) // 40L
     obj.mode="sprint" + 
       (gameparams.lineLimit?""+gameparams.lineLimit:"") +
+      (gameparams.widthLimit?("width"+gameparams.widthLimit):"") +
       (gameparams.pieceSet?["","noi","alli"][gameparams.pieceSet]:"") +
       (gameparams.backFire?["","bf1","bf2","bf3","bf4"][gameparams.backFire]:"")+
       (gameparams.delType?["","whole"][gameparams.delType]:"")+
