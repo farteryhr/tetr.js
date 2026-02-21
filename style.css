@@ -139,7 +139,7 @@ a.btn.btn-inline i {
 #stats tbody tr:not(:last-of-type) {
   margin: 1rem 0;
 }
-#stats tbody tr th:not(:first-child) {
+#stats tbody tr th .statslabel {
   font-size: 1.3rem;
 }
 
@@ -374,6 +374,9 @@ nav li {
 #penalty {
   color: #F33;
 }
+#stats tr #modeid {
+  font-size: 30%;
+}
 /* Menus */
 .menu {
   text-align: center;
@@ -473,6 +476,8 @@ i.left.material-icons, i.right.material-icons {
   font-size: .9em;
   font-weight: bold;
   display: inline-block;
+/*  display: inline-flex; 
+  justify-content: center; */
   width: 4rem;
 }
 #leader div {

@@ -87,10 +87,18 @@ var WKTableDTET_R = [[ 0, 0],[+1, 0],[-1, 0],[ 0,+1],[+1,+1],[-1,+1],[ 0,-1]];
 var WKTableDTET_L = [[ 0, 0],[-1, 0],[+1, 0],[ 0,+1],[-1,+1],[+1,+1],[ 0,-1]];
 var WKTableDTET = [WKTableDTET_R,WKTableDTET_L,WKTableDTET_L];
 
-var WKTableDX_R = [[[0, 0], [-1, -1]], [[0, 0], [+1, -1]], [[0, 0], [+1, +1]], [[0, 0], [-1, +1]]];
-var WKTableDX_L = [[[0, 0], [+1, -1]], [[0, 0], [+1, +1]], [[0, 0], [-1, +1]], [[0, 0], [-1, -1]]];
-var WKTableDX_2 = [[[0, 0], [ 0, -2]], [[0, 0], [-2,  0]], [[0, 0], [ 0, +2]], [[0, 0], [+2,  0]]];
+var WKTableDX_R = [[[0, 0], [-1,-1]], [[0, 0], [+1,-1]], [[0, 0], [+1,+1]], [[0, 0], [-1,+1]]];
+var WKTableDX_L = [[[0, 0], [+1,-1]], [[0, 0], [+1,+1]], [[0, 0], [-1,+1]], [[0, 0], [-1,-1]]];
+var WKTableDX_2 = [[[0, 0], [ 0,-2]], [[0, 0], [-2, 0]], [[0, 0], [ 0,+2]], [[0, 0], [+2, 0]]];
 var WKTableDX = [WKTableDX_R,WKTableDX_L,WKTableDX_2];
+
+var WKTableTheBattle = [[ 0, 0], [+1, 0], [-1, 0], [+2, 0], [-2, 0], [ 0,+1], [+1,+1], [-1,+1], [ 0,+2], [+1,+2], [-1,+2], [ 0,+3], [+1,+3], [-1,+3], [ 0,-1]]; // powerful!
+
+// X according to rotation direction
+var WKTableEX_N = [[ 0, 0], [+1, 0], [+1,+1], [ 0,+1], [-1,+1], [-1, 0], [ 0,-1]]; // normal
+var WKTableEX_F = [[+1, 0], [+1,+1], [+2, 0], [ 0, 0], [ 0,+1], [ 0,-1], [-1,+1], [-1, 0]]; // forward, first not origin
+var WKTableEX_B = [[-1, 0], [-1,+1], [ 0,+1], [-1,+2], [ 0, 0], [ 0,-1], [+1, 0], [+1,+1]]; // backward, first not origin
+var WKTableEX = [WKTableEX_B,WKTableEX_N,WKTableEX_F]; // -1, 0, 1 by direction * blockedDir
 
 var OffsetSRS = [
   [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
@@ -151,6 +159,14 @@ var OffsetNintendo = [
 var OffsetMS = [
   [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]],
   [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[+1,+1],[+1,+1],[+1, 0],[+2,+1]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[ 0,+1],[-1,+1],[ 0, 0],[ 0,+1]]];
+var OffsetLianZhong = [
+  [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
   [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
   [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
   [[+1,+1],[ 0,+1],[+1, 0],[+1,+1]],
@@ -170,7 +186,7 @@ var Offset5000 = [
   [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
   [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
   [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]],
-  [[ 0,+1],[-1, 0],[ 0,-1],[+1, 0]],
+  [[ 0,+1],[-1, 0],[ 0,-1],[+1, 0]], // wow
   [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]]];
 var OffsetPlus = [
   [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]],
@@ -332,7 +348,135 @@ var OffsetHuanle = [
   [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]],
   [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
   [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]]];
-  
+var OffsetSmooth = [
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[-1,+1],[ 0, 0],[ 0,+1]],
+  [[ 0,+1],[-1,+1],[ 0, 0],[ 0,+1]],
+  [[ 0,+1],[ 0,+1],[ 0, 0],[+1,+1]]];
+var OffsetXio = [ // not overall 4x4 due to I
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]]];
+var OffsetBlockles = [ // not overall 4x4 due to I spawn all inside vertically...
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]]];
+var OffsetKen = [
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]]];
+var OffsetTBlocksHerman = [
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0,+1],[-1,+1],[ 0, 0],[ 0,+1]],
+  [[ 0,+1],[-1,+1],[ 0, 0],[ 0,+1]],
+  [[-1,+1],[-1,+1],[-1,+1],[-1,+1]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]]];
+var OffsetTheBattle = [
+  [[ 0,-1],[ 0, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[-1, 0],[-1, 0],[-1, 0],[-1, 0]],
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]]];
+var OffsetPala = [ // almost nintendoL except I y
+  [[ 0, 0],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]]];
+var OffsetCrystalCubes = [ // I 5x5
+  [[ 0, 0],[ 0,-1],[+1,-1],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1,+1],[+1,+1],[+1,+1],[+1,+1]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]]];
+var OffsetMiniClip = [ // I S 5x5
+  [[ 0, 0],[ 0,-1],[+1,-1],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1,+1],[+1,+1],[+1,+1],[+1,+1]],
+  [[+3, 0],[+2,+1],[+1, 0],[+2,-1]], // wow
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]]];
+var OffsetEXC = [
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]],
+  [[ 0,+2],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+2],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+2],[ 0,+2],[ 0,+2],[ 0,+2]],
+  [[ 0,+2],[-1,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+2],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+2],[ 0,+1],[ 0,+1],[+1,+1]]];
+var OffsetEXM = [ // modified to avoid being overall 4x5
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]]];
+var OffsetRaincookie = [
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0,+1],[ 0, 0],[ 0, 0],[+1, 0]]];
+var OffsetTetroid2012 = [
+  [[ 0,+1],[-1, 0],[ 0, 0],[ 0, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[+1,+1],[ 0, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1,+1],[ 0, 0],[+1, 0],[+1, 0]]];
+var OffsetNovaLight = [
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[-1, 0],[-1, 0],[-1, 0],[-1, 0]],
+  [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]],
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[ 0, 0],[ 0, 0],[ 0,-1],[+1, 0]]];
+var OffsetDeardorff = [
+  [[ 0, 0],[-1, 0],[ 0,-1],[ 0, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[+1,+1],[+1, 0],[+1, 0],[+2, 0]],
+  [[+1, 0],[+1, 0],[+1, 0],[+1, 0]],
+  [[+1,+1],[+1, 0],[+1, 0],[+2, 0]]];
+var OffsetZBS = [
+  [[ 0, 0],[ 0, 0],[ 0, 0],[ 0, 0]],
+  [[+1,+1],[ 0,+1],[ 0, 0],[+1, 0]],
+  [[ 0,+1],[ 0, 0],[+1, 0],[+1,+1]],
+  [[ 0,+1],[ 0,+1],[ 0,+1],[ 0,+1]],
+  [[ 0,+1],[ 0, 0],[+1, 0],[+1,+1]],
+  [[ 0,+1],[ 0, 0],[+1, 0],[+1,+1]],
+  [[ 0,+1],[ 0, 0],[+1, 0],[+1,+1]]];
+
 //x, y, r
 var InitInfoSRS = [[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0]];
 var InitInfoARS = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
@@ -341,7 +485,8 @@ var InitInfoQQ = [[ 0, 0, 0],[ 0, 0, 1],[ 0, 0, 3],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0,
 var InitInfoAtari = [[+1, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
 var InitInfoNBlox = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
 var InitInfoNintendo = [[ 0, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
-var InitInfoMS = [[ 0, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
+var InitInfoMS = [[ 0, 0, 0],[+1, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[+1,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
+var InitInfoLianZhong = [[ 0, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
 var InitInfoE60 = [[ 0, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
 var InitInfo5000 = [[ 0, 0, 3],[ 0, 0, 1],[+1, 0, 3],[ 0, 0, 0],[ 0, 0, 0],[ 0, -1, 2],[ 0, 0, 0]];
 var InitInfoPlus = [[ 0, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
@@ -364,11 +509,30 @@ var InitInfoTwin = [[ 0, 0, 0],[+1,+1, 0],[ 0,+1, 0],[ 0,+1, 0],[+1,+1, 0],[ 0,+
 var InitInfoFun2k = [[ 0, 0, 0],[+1, 0, 0],[+1, 0, 0],[+1, 0, 0],[+1, 0, 0],[+1, 0, 0],[+1, 0, 0]];
 var InitInfoBrick = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
 var InitInfoHuanle = [[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0,-1, 1],[ 0, 0, 0],[ 0,-1, 1]];
+var InitInfoMult = [[ 0, 0, 3],[ 0, 0, 3],[ 0, 0, 3],[ 0, 0, 0],[ 0, 0, 3],[ 0, 0, 3],[ 0, 0, 1]];
+var InitInfoXio = [[+1,+1, 0],[+1,+1, 0],[+1,+1, 0],[ 0,+1, 0],[+1, 0, 2],[+1,+1, 0],[+1, 0, 2]];
+var InitInfoSmooth = [[ 0,+1, 0],[ 0,+1, 0],[ 0,+1, 0],[ 0,+1, 0],[ 0,+1, 0],[ 0,+1, 0],[ 0,+1, 0]];
+var InitInfoBlockles = [[-1, 0, 1],[ 0, 0, 3],[ 0, 0, 1],[-1,+1, 0],[ 0,+1, 0],[ 0,+1, 0],[ 0,+1, 0]];
+var InitInfoKen = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
+var InitInfoTBlocksHerman = [[+1, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
+var InitInfoTheBattle = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[-1,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
+var InitInfoPala = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
+var InitInfoCrystalCubes = [[+1, 0, 3],[+1, 0, 3],[+1, 0, 1],[+1,+1, 0],[+1, 0, 2],[+1, 0, 0],[+1, 2, 2]];
+var InitInfoMiniClip = [[+1,-1, 2],[+1, 0, 2],[+1, 0, 2],[+1,+1, 0],[+1, 0, 2],[+1, 0, 2],[+1, 0, 2]];
+var InitInfoEXC = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
+var InitInfoEXM = [[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0]]; // up-to-date!
+var InitInfoRaincookie = [[ 0, 0, 0],[ 0, 0, 2],[ 0, 0, 2],[ 0,+1, 0],[ 0,+1, 0],[ 0, 0, 2],[ 0,+1, 0]];
+var InitInfoTetroid2012 =  [[-1, 0, 1],[+1, 0, 1],[+1, 0, 3],[ 0,+1, 0],[+1,+1, 0],[ 0, 0, 0],[+1,+1, 0]];
+var InitInfoNovaLight = [[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[-1, 0, 0],[ 0, 0, 0],[ 0, 0, 0],[ 0, 0, 0]];
+var InitInfoDeardorff = [[ 0, 0, 0],[+1, 0, 2],[+1, 0, 2],[ 0,+1, 0],[+1,+1, 0],[+1, 0, 2],[+1,+1, 0]];
+var InitInfoZBS = [[ 0, 0, 0],[+1, 0, 3],[ 0, 0, 1],[ 0,+1, 0],[ 0, 0, 1],[ 0, 0, 1],[ 0, 0, 1]];
 
 var ColorSRS = [1, 2, 3, 4, 5, 6, 7];
 var ColorSega = [7, 2, 3, 4, 6, 1, 5];
+var ColorSegaMirror = [7, 3, 2, 4, 5, 1, 6];
 var ColorQQ = [7, 1, 3, 4, 5, 6, 2];
-var ColorTengen = [7, 3, 6, 2, 5, 4, 1];
+var ColorTengen = [7, 4, 6, 2, 5, 3, 1]; // olive
+var ColorTengenMirror = [7, 6, 4, 2, 1, 3, 5];
 var ColorAtari = [7, 4, 6, 2, 1, 5, 3];
 var ColorNBlox = [3, 6, 2, 7, 1, 4, 5];
 var ColorC2 = [5, 2, 6, 4, 1, 7, 9];
@@ -385,7 +549,7 @@ var ColorGameBoy = [9, 2, 7, 8, 7, 9, 2];
 var ColorTNET = [2, 5, 6, 4, 2, 4, 7];
 var ColorCDi = [3, 7, 5, 9, 6, 2, 4];
 var ColorSHC = [2, 4, 5, 7, 1, 3, 6];
-var ColorMax = [2, 7, 1, 6, 4, 5, 9];
+var ColorMax = [2, 7, 1, 6, 4, 5, 9]; // two schemes?
 var ColorIntelore = [9, 5, 2, 4, 6, 7, 1];
 var ColorZen = [6, 2, 7, 4, 3, 5, 1];
 var ColorTris = [3, 7, 5, 6, 2, 1, 4];
@@ -399,6 +563,22 @@ var ColorTwin = [7, 6, 3, 2, 1, 4, 5];
 var ColorFun2k = [1, 7, 4, 3, 6, 2, 5];
 var ColorMono = [9, 9, 9, 9, 9, 9, 9];
 var ColorHuanle = [1, 2, 5, 7, 6, 4, 3];
+var ColorMult = [7, 6, 3, 2, 1, 5, 4];
+var ColorXio = [4, 2, 3, 1, 5, 7, 6];
+var ColorSuperLite = [1, 2, 6, 8, 5, 4, 7];
+var ColorBlockles = [4, 8, 6, 7, 1, 5, 2];
+var ColorKen = [7, 1, 5, 2, 4, 9, 6];
+var ColorTBlocksHerman = ColorTengenMirror; // detail difference
+var ColorCrisis = [6, 5, 4, 2, 7, 1, 3];
+var ColorPala = [7, 6, 4, 2, 8, 5, 1]; // magenta J purple S
+var ColorCrystalCubes = [7, 4, 6, 3, 2, 1, 5];
+var ColorMiniClip = [4, 3, 7, 8, 1, 2, 5]; // darkgreen S
+var ColorRaincookie = [3, 6, 2, 7, 1, 4, 5];
+var ColorTetroid2012 = [5, 6, 8, 4, 7, 1, 2]; // Z blue-purple J magenta S red-orange
+var ColorNovaLight = [8, 5, 4, 3, 2, 7, 6];
+var ColorDeardorff = [5, 2, 6, 8, 7, 1, 3]; // Z orange-yellow I yellow-green
+var ColorZBS = [7, 4, 6, 1, 5, 3, 2]; // Z orange-yellow I yellow-green
+var ColorQuadraBreak = [7, 3, 1, 2, 4, 5, 6];
 
 var RotSys = [
   {
@@ -447,8 +627,8 @@ var RotSys = [
     color: ColorNintendo,
   },
   {
-    initinfo: InitInfoMS,
-    offset: OffsetMS,
+    initinfo: InitInfoLianZhong,
+    offset: OffsetLianZhong,
     color: ColorMS,
   },
   {
@@ -527,6 +707,7 @@ var RotSys = [
     color: ColorZen,
   },
   {
+    // Noah Witherspoon
     initinfo: InitInfoTris,
     offset: OffsetTris,
     color: ColorTris,
@@ -580,6 +761,113 @@ var RotSys = [
     initinfo: InitInfoHuanle,
     offset: OffsetHuanle,
     color: ColorHuanle,
+  },
+  {
+    initinfo: InitInfoMS,
+    offset: OffsetMS,
+    color: ColorMS,
+  },
+  {
+    initinfo: InitInfoMult,
+    offset: OffsetSRS,
+    color: ColorMult,
+  },
+  {
+    initinfo: InitInfoXio,
+    offset: OffsetXio,
+    color: ColorXio,
+  },
+  {
+    initinfo: InitInfoSmooth,
+    offset: OffsetSmooth,
+    color: ColorTengenMirror,
+  },
+  {
+    initinfo: InitInfoSRS,
+    offset: OffsetSRS,
+    color: ColorSuperLite,
+  },
+  {
+    initinfo: InitInfoBlockles,
+    offset: OffsetBlockles,
+    color: ColorBlockles,
+  },
+  {
+    initinfo: InitInfoKen,
+    offset: OffsetKen,
+    color: ColorKen,
+  },
+  {
+    initinfo: InitInfoTBlocksHerman,
+    offset: OffsetTBlocksHerman,
+    color: ColorTBlocksHerman,
+  },
+  { // 4
+    initinfo: InitInfoNintendoL,
+    offset: OffsetNintendoL,
+    color: ColorCrisis,
+  },
+  { // tris the battle x13h, powerful wallkick
+    initinfo: InitInfoTheBattle,
+    offset: OffsetTheBattle,
+    color: ColorAtari,
+  },
+  {
+    initinfo: InitInfoPala,
+    offset: OffsetPala,
+    color: ColorPala,
+  },
+  {
+    initinfo: InitInfoCrystalCubes,
+    offset: OffsetCrystalCubes,
+    color: ColorCrystalCubes,
+  },
+  {
+    initinfo: InitInfoMiniClip,
+    offset: OffsetMiniClip,
+    color: ColorMiniClip,
+  },
+  {
+    initinfo: InitInfoEXC,
+    offset: OffsetEXC,
+    color: ColorSega,
+    moveThenRot: true, // intra-frame processing order
+  },
+  {
+    initinfo: InitInfoEXM,
+    offset: OffsetEXM,
+    color: ColorSRS,
+    moveThenRot: true, // intra-frame processing order
+  },
+  {
+    initinfo: InitInfoRaincookie,
+    offset: OffsetRaincookie,
+    color: ColorRaincookie,
+  },
+  {
+    initinfo: InitInfoTetroid2012,
+    offset: OffsetTetroid2012,
+    color: ColorTetroid2012,
+  },
+  {
+    initinfo: InitInfoNovaLight,
+    offset: OffsetNovaLight,
+    color: ColorNovaLight,
+  },
+  {
+    initinfo: InitInfoDeardorff,
+    offset: OffsetDeardorff,
+    color: ColorDeardorff,
+  },
+  { // 这不是俄罗斯方块 (flash)（not "Not tetris" (love2d)）
+    initinfo: InitInfoZBS,
+    offset: OffsetZBS,
+    color: ColorZBS,
+  },
+  { // 方块碎裂 20251211
+    initinfo: InitInfoSRS,
+    offset: OffsetSRS,
+    color: ColorQuadraBreak,
   },
 ];
 
@@ -753,7 +1041,7 @@ var gravityNameArr = (function() {
 })();
 var dasNameArr = (function() {
   var array = [];
-  array.push('0');
+  array.push('0 ?!');
   for (var i = 1; i < 16; i++)
     array.push(i+', '+(i>=6?(i/60).toFixed(2)+"s":~~(i*100/6+.5)+"ms"));
   return array;
@@ -767,6 +1055,7 @@ var mySettings = {
   SoftDrop: 7,
   Gravity: 0,
   LockDelay: 30,
+  AREDelay: 0,
   RotSys: 0,
   Next: 6,
   Size: 0,
@@ -784,17 +1073,18 @@ var settings = mySettings; // initialized by reference; replaced when game start
 
 var settingName = {
   DAS: "DAS 加速延迟",
-  ARR: "ARR 重复速率",
+  ARR: "ARR 重复间隔",
   SoftDrop: "Soft Drop 软降速度",
   Gravity: "Gravity 下落速度",
   LockDelay: "Lock Delay 锁定延迟",
+  AREDelay: "ARE Delay 出块延迟",
   RotSys: "Rotation 旋转系统",
   Next: "Next 预览块数",
-  Size: "Size 大小",
-  Sound: "Sound 声音",
+  Size: "Size 界面大小",
+  Sound: "Sound 音效包",
   Volume: "Volume 音量",
-  Block: "Block 样式",
-  Ghost: "Ghost 影子",
+  Block: "Block 方块样式",
+  Ghost: "Ghost 影子样式",
   Grid: "Grid 网格",
   Outline: "Outline 方块边缘",
   DASCut: "DAS Cut 加速打断",
@@ -804,16 +1094,21 @@ var setting = {
   DAS: dasNameArr,
   ARR: ["0 (∞)","1, 60Hz","2, 30Hz","3, 20Hz","4, 15Hz","5, 12Hz","6, 10Hz","7, 8.6Hz","8, 7.5Hz","9, 6.7Hz","10, 6Hz"],
   SoftDrop: gravityNameArr,
-  Gravity: ["Auto"].concat(gravityNameArr),
-  LockDelay: range(0, 101),
+  Gravity: ["- Auto -"].concat(gravityNameArr),
+  LockDelay: range(0, 30).concat(["- 30 -"]).concat(range(31,101)),
+  AREDelay: ["- 0 -"].concat(range(1, 31)),
   RotSys: [
-    '- Super -', 'CultrisII', 'Arika*', 'DTET', 'NM/QQ', 'Atari', 'Tengen',
-    'N-Blox', 'Nintendo', 'Microsoft', 'E-60', 'IBM PC', 'JJ', '5000',
+    '- Super -', 'CultrjsII', 'Arika*', 'DTET', 'NM/QQ', 'Atari', 'Tengen',
+    'N-Blox', 'Nintendo', '联众大厅', 'E-60', 'IBM PC', 'JJ', '5000',
     'Plus', 'DX', 'GameBoy', 'Quadra', 'Mybo', 'TNET', 'CD-i',
-    'SH Clsc.', 'Max/BL', 'Intelore', 'Zen', 'Tris', 'Quinn', 'BPS', 'BPS2',
-    'ACiD', '英雄无敌', 'Truka·My', 'Twin', 'TFun2k', 'Brick', '桃谷欢乐'
+    'S.H. Clsc.', 'Max/BL', 'Intelore', 'Zentrjs', 'N.W. Trjs', 'Quinn', 'BPS', 'BPS2',
+    'ACiD', '英雄无敌', 'Truka·My', 'Twin', 'TFun2k', 'BrickGame', '桃谷欢乐',
+    'Microsoft', 'Multrjs', 'Xio Mino', 'Smooth', 'SuperLite', 'Blockles', "Kentrjs",
+    "Herman", "TCrisis", 'TheBattle', 'Palatrjs', 'CrystalCbs', 'MiniClip',
+    "EX Clsc.", "EX Mdrn.", "raincookie", "Troid2012", "NovaLight", "Deardorff", "这不是",
+    "方块碎裂",
   ],
-  Next: ['-', '1', '2', '3', '4', '5', '6'],
+  Next: ['Off?!', '1', '2', '3', '4', '5', '6'],
   Size: ['Auto', 'Small', 'Medium', 'Large', 'Larger'],
   Sound: ['Off', 'Memes', 'Dr.Ocelot'],
   Volume: range(0, 101),
@@ -821,7 +1116,7 @@ var setting = {
   Ghost: ['Grey', 'Colored', 'Off', 'Hidden'],
   Grid: ['Off', 'On'],
   Outline: ['Off', 'On', 'Hidden', 'Only'],
-  DASCut: ['Off', 'On'],
+  DASCut: ['Off', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Hard'],
   NextSide: ['Right', 'Left']
 };
 var arrRowGen = {

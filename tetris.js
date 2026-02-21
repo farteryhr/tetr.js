@@ -31,6 +31,7 @@ var statsPiece = $$('piece');
 var statsScore = $$('score');
 var statsLevel = $$('level');
 var statsPenalty = $$('penalty');
+var statsModeId = $$('modeid');
 
 var h3 = document.getElementsByTagName('h3');
 var set = $$('settings');
@@ -133,7 +134,7 @@ var gametype;
 var gameparams;
 //TODO Make dirty flags for each canvas, draw them all at once during frame call.
 // var dirtyHold, dirtyActive, dirtyStack, dirtyPreview;
-var lastX, lastY, lastPos, lastLockDelay, landed;
+var lastX, lastY, lastPos, lastLockDelay, lastBlockedDir;
 
 // Scoring related status
 var b2b;
@@ -530,6 +531,7 @@ function init(gt, params) {
   touchButtonsToggle();
 
   resize();
+  $setText(statsModeId,getmodeid().toUpperCase());
 }
 
 /**
@@ -606,13 +608,13 @@ function updateScoreTime(){
  * Draws the stats next to the tetrion.
  */
 function statistics() {
-
-  var time = scoreTime || 0;
-  var seconds = ((time % 60000) / 1000).toFixed(2);
-  var minutes = ~~(time / 60000);
-  var displayTime =
-    (minutes < 10 ? '0' : '') + minutes +
-    (seconds < 10 ? ':0' : ':') + seconds;
+  var t = scoreTime || 0;
+  var hs=Math.round(t/10);
+  var s=~~(hs/100);
+  var m=~~(s/60);
+  hs-=s*100;
+  s-=m*60;
+  var displayTime = ((m>9?"":"0")+m)+":"+((s>9?"":"0")+s)+"."+((hs>9?"":"0")+hs);
   var fsbl = 30; /* frameskip bar length */
   var pos = frameSkipped.mod(fsbl*2);
   var skipL = pos, skipR = pos;
@@ -695,9 +697,12 @@ function bg(ctx) {
 /**
  * Draws a pre-rendered mino.
  */
-function drawCell(x, y, color, ctx, darken) {
+function drawCell(x, y, color, ctx, darken, blockedDir) {
   x = Math.floor(x * cellSize);
   y = Math.floor(y * cellSize);
+  if(true && blockedDir) {
+    x += blockedDir * ~~(cellSize / 16 + 0.5);
+  }
   ctx.drawImage(spriteCanvas, color * cellSize, 0, cellSize, cellSize, x, y, cellSize, cellSize);
   if (darken) {
     //ctx.globalCompositeOperation = 'source-atop';
@@ -841,7 +846,7 @@ function clear(ctx) {
 /**
  * Draws a 2d array of minos.
  */
-function draw(tetro, cx, cy, ctx, color, darkness) {
+function draw(tetro, cx, cy, ctx, color, darkness, blockedDir) {
   var darken = false;
   if (darkness) {
     darken = true;
@@ -850,7 +855,7 @@ function draw(tetro, cx, cy, ctx, color, darkness) {
   for (var x = 0; x < tetro.length; x++) {
     for (var y = 0; y < tetro[x].length; y++) {
       if (tetro[x][y]) {
-        drawCell(x + cx, y + cy, color !== void 0 ? color : (tetro[x][y] & cellFlags.maskColor), ctx, darken);
+        drawCell(x + cx, y + cy, color !== void 0 ? color : (tetro[x][y] & cellFlags.maskColor), ctx, darken, blockedDir);
       }
     }
   }
@@ -938,6 +943,14 @@ function update() {
       break;
     }
 
+    if (piece.landed) { // consider 1f lock delay vs. 1f ARE. let there be chance to reset by rotate/shift.
+      piece.lockDelay++;
+    }
+    
+    if (RotSys[settings.RotSys].moveThenRot) { // intra-frame processing order
+      piece.checkShift();
+    }
+    
     if (!gameparams.noRotation) {
       if (flags.rotLeft & keysPushing) {
         piece.rotate(-1);
@@ -951,7 +964,10 @@ function update() {
       }
     }
 
-    piece.checkShift();
+    if (!RotSys[settings.RotSys].moveThenRot) { // intra-frame processing order
+      piece.checkShift();
+    }
+    
 
     if (flags.moveDown & keysDown) {
       piece.shiftDown();
@@ -1074,21 +1090,7 @@ function gameLoop() {
           update();
 
       } else if (gameState === 2 || gameState === 4) {
-
-        // DAS Preload
-        if (keysDown & flags.moveLeft) {
-          piece.shiftDelay = settings.DAS;
-          piece.shiftReleased = false;
-          piece.shiftDir = -1;
-        } else if (keysDown & flags.moveRight) {
-          piece.shiftDelay = settings.DAS;
-          piece.shiftReleased = false;
-          piece.shiftDir = 1;
-        } else {
-          piece.shiftDelay = 0;
-          piece.shiftReleased = true;
-          piece.shiftDir = 0;
-        }
+      
         if (!gameparams.noRotation) {
           if (flags.rotLeft & keysPushing) {
             piece.irsDir = -1;
@@ -1101,6 +1103,9 @@ function gameLoop() {
             piece.finesse++;
           }
         }
+        // DAS Preload
+        piece.checkShiftInARE();
+        
         if (flags.holdPiece & keysPushing) {
           if (gametype === 1 && gameparams.marathonType === 1){
           } else {
@@ -1183,6 +1188,7 @@ function gameLoop() {
     Math.floor(piece.y) !== lastY ||
     piece.pos !== lastPos ||
     piece.lockDelay !== lastLockDelay ||
+    piece.blockedDir !== lastBlockedDir ||
     piece.dirty) {
       piece.draw();
     }
@@ -1190,6 +1196,7 @@ function gameLoop() {
     lastY = Math.floor(piece.y);
     lastPos = piece.pos;
     lastLockDelay = piece.lockDelay;
+    lastBlockedDir = piece.blockedDir;
     piece.dirty = false;
     
     if (stack.dirty) {
@@ -1294,19 +1301,9 @@ function requireplayername(){
     playername="unnamed";
 }
 
-function trysubmitscore() {
-  if(watchingReplay)
-    return;
-  if(gametype===4 && gameparams.digraceType==="map")
-    void 0;//return;
-  var obj={req:"ranking"};
-  var time = scoreTime;
-  if(timePenalty){
-    time+=1000*timePenalty;
-  }
-
+function getmodeid(){
   if(gametype===0) // 40L
-    obj.mode="sprint" + 
+    return "sprint" + 
       (gameparams.lineLimit?""+gameparams.lineLimit:"") +
       (gameparams.widthLimit?("width"+gameparams.widthLimit):"") +
       (gameparams.pieceSet?["","noi","alli"][gameparams.pieceSet]:"") +
@@ -1320,22 +1317,37 @@ function trysubmitscore() {
       (gameparams.isolation?["","iso","isoboth"][gameparams.isolation]:"")+
       (gameparams.tfmStackEachPiece?["","epflipx","epflipy","eprot180"][gameparams.tfmStackEachPiece]:"");
   else if(gametype===3) // dig
-    obj.mode="dig" + (gameparams.digOffset?gameparams.digOffset:"");
+    return "dig" + (gameparams.digOffset?gameparams.digOffset:"");
   else if(gametype===4) // dig race
-    obj.mode="digrace" +
+    return "digrace" +
       (gameparams.digraceType?gameparams.digraceType:"checker") +
       (gameparams.triplet?["","triplet"][gameparams.triplet]:"")+
       (gameparams.symmetry?["","symmetry"][gameparams.symmetry]:"");
   else if(gametype===1) // marathon
-    obj.mode="marathon" + (gameparams.marathonType?["","cls"][gameparams.marathonType]:"");
+    return "marathon" + (gameparams.marathonType?["","cls"][gameparams.marathonType]:"");
   else if(gametype===5) // score attack
-    obj.mode="score";
+    return "score";
   else if(gametype===6) // 20g
-    obj.mode="marathon20g";
+    return "marathon20g";
   else if(gametype===7) // dig zen
-    obj.mode="digzen";
+    return "digzen";
   else
+    return null;
+}
+
+function trysubmitscore() {
+  if(watchingReplay)
     return;
+  if(gametype===4 && gameparams.digraceType==="map")
+    void 0;//return;
+  var obj={req:"ranking"};
+  var time = scoreTime;
+  if(timePenalty){
+    time+=1000*timePenalty;
+  }
+  if((obj.mode=getmodeid())===null){
+    return;
+  }
 
   if(
     (gametype===0 && gameState===1)||

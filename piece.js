@@ -15,9 +15,13 @@ function Piece() {
   this.ihs = false;
   this.shiftDelay = 0;
   this.shiftDir = 0;
-  this.shiftReleased = false;
+  this.shiftReleased = false; // "(some first) shift want to be triggered"
+   // attempted to move, but failed. cleared when corresponding move button up. rotsys's that consumes blockedness?
+   // count into dirty // doesn't count when in ARE
+  this.blockedDir = 0;
   this.arrDelay = 0;
   this.held = false;
+  this.landed = false;
   this.finesse = 0;
   this.dirty = false;
   this.dead = true;
@@ -63,7 +67,7 @@ Piece.prototype.new = function(index) {
     this.tetro = pieces[index].tetro[this.pos];
   }
 
-  this.lockDelayLimit = setting.LockDelay[settings.LockDelay];
+  this.lockDelayLimit = settings.LockDelay;
   if (gametype === 6) { //Death
     this.gravity = Infinity;
     if (level < 20) {
@@ -113,32 +117,36 @@ Piece.prototype.new = function(index) {
   
   //real 20G
   this.checkInfGravity();
-  landed = !this.moveValid(0, 1, this.tetro);
+  this.landed = !this.moveValid(0, 1, this.tetro);
   
   // die-in-one-frame!
-  if(landed && (this.lockDelay >= this.lockDelayLimit)) {
+  if(this.landed && (this.lockDelay >= this.lockDelayLimit)) {
     this.checkLock();
   }
 }
-Piece.prototype.tryKickList = function(kickList, rotated, newPos, offsetX, offsetY) {
+Piece.prototype.tryKickList = function(kickList, rotated, newPos, offsetX, offsetY, dxMult) {
   for (var k = 0; k < kickList.length; k++) {
     if (this.moveValid(
-      offsetX + kickList[k][0],
+      offsetX + kickList[k][0] * dxMult,
       offsetY + kickList[k][1],
       rotated
     )) {
-      this.x += offsetX + kickList[k][0];
+      this.x += offsetX + kickList[k][0] * dxMult;
       this.y += offsetY + kickList[k][1];
       this.tetro = rotated;
       this.pos = newPos;
       this.finesse++;
       sound.playse("rotate");
-      break;
+      this.blockedDir = 0; // check when next time shift
+      return true;
     }
   }
+  return false;
 }
 Piece.prototype.rotate = function(direction) {
-
+  if(this.blockedDir !== 0 || settings.DASCut === setting.DASCut.length-1) {
+    this.checkDasCut(true);
+  }
   // Goes thorugh kick data until it finds a valid move.
   var curPos = this.pos.mod(4);
   var newPos = (this.pos + direction).mod(4);
@@ -147,6 +155,7 @@ Piece.prototype.rotate = function(direction) {
   var offset = RotSys[settings.RotSys].offset[this.index];
   var offsetX = offset[newPos][0] - offset[curPos][0];
   var offsetY = offset[newPos][1] - offset[curPos][1];
+  var dxMult = 1;
   if (settings.RotSys === 2 || settings.RotSys === 14) { //ARS, Plus
     var kickList = [];
     if (this.index === PieceI.index) {
@@ -166,20 +175,98 @@ Piece.prototype.rotate = function(direction) {
   } else {
     var kickIndex = [ 1, -1 ,2].indexOf(direction); // kickDataDirectionIndex
     var kickList;
-    if(settings.RotSys === 0 || settings.RotSys === 12)
+    if(settings.RotSys === 0 || settings.RotSys === 12 || settings.RotSys === 56) //jj,quadrabreak
       kickList = WKTableSRS[this.index][kickIndex][curPos];
     else if (settings.RotSys === 1)
       kickList = WKTableCultris;
-    else if (settings.RotSys === 15)
+    else if (settings.RotSys === 15 || settings.RotSys === 40) // dx superlite
       kickList = WKTableDX[kickIndex][curPos]
     else if (settings.RotSys === 28) // BPS2 for true man
       kickList = [[0, 0]];
-    else
-      kickList = WKTableDTET[kickIndex];
-    this.tryKickList(kickList, rotated, newPos, offsetX, offsetY);
+    else if (settings.RotSys === 46) // Tris the battle
+      kickList = WKTableTheBattle;
+    else if (settings.RotSys === 49 || settings.RotSys === 50) { // T-EX!
+      // T-EX intra-frame processing order: shift-rotate-fall
+      var blockedDir = this.blockedDir;
+      if(direction === 2) { // inaccurate cus T-EX doesn't have rot180
+        kickList = WKTableEX_N;
+        dxMult = blockedDir || 1;
+      } else {
+        kickIndex = blockedDir * direction + 1;
+        kickList = WKTableEX[kickIndex];
+        dxMult = direction;
+        // console.log(kickIndex, kickList);
+      }
+    } else
+      kickList = WKTableDTET[kickIndex]; // inaccurate cus DTET doesn't have 180
+    this.tryKickList(kickList, rotated, newPos, offsetX, offsetY, dxMult);
   }
 }
-
+Piece.prototype.checkDasCut = function(isRotate) {
+  if (this.shiftDir !== 0) {
+    if(!isRotate) {
+      this.arrDelay = 0; // anti-slidiness // THE actual upgrade from 0.68
+    }
+    var dascut = settings.DASCut || 0; //0=synchro
+    if (dascut === setting.DASCut.length-1) {
+      dascut = Infinity;
+    }
+    if(!isRotate) { // for rotate, keep dascut==0 synchro
+      dascut = Math.max(dascut, settings.ARR - 1);
+    }
+    this.shiftDelay = Math.min(this.shiftDelay, settings.DAS - dascut); // may be <0!
+  }
+}
+Piece.prototype.checkShiftInARE = function() {
+  // Shift key pressed event.
+  if (keysPushing & flags.moveLeft) {
+    this.shiftDelay = 0;
+    this.arrDelay = 0;
+    this.shiftReleased = true;
+    this.shiftDir = -1;
+    this.finesse++;
+  } else if (keysPushing & flags.moveRight) {
+    this.shiftDelay = 0;
+    this.arrDelay = 0;
+    this.shiftReleased = true;
+    this.shiftDir = 1;
+    this.finesse++;
+  }
+    // Shift key released event.
+  if (this.shiftDir === 1 && keysPopping & flags.moveRight && keysDown & flags.moveLeft) {
+    this.shiftDelay = 0;
+    this.arrDelay = 0;
+    this.shiftReleased = true;
+    this.shiftDir = -1;
+    this.blockedDir = 0;
+  } else if (this.shiftDir === -1 && keysPopping & flags.moveLeft && keysDown & flags.moveRight) {
+    this.shiftDelay = 0;
+    this.arrDelay = 0;
+    this.shiftReleased = true;
+    this.shiftDir = 1;
+    this.blockedDir = 0;
+  } else if (keysPopping & flags.moveRight && keysDown & flags.moveLeft) {
+    this.shiftDir = -1;
+  } else if (keysPopping & flags.moveLeft && keysDown & flags.moveRight) {
+    this.shiftDir = 1;
+  } else if ((keysPopping & flags.moveLeft) || (keysPopping & flags.moveRight)) {
+    this.shiftDelay = 0;
+    this.arrDelay = 0;
+    this.shiftReleased = true;
+    this.shiftDir = 0;
+    this.blockedDir = 0;
+  }
+  if (this.shiftDir) {
+    if (this.shiftReleased && settings.DAS !== 0) {
+      this.shiftReleased = false;
+      this.shiftDelay++;
+    } else if (this.shiftDelay < settings.DAS) {
+      this.shiftDelay++;
+    } else if (this.shiftDelay < Infinity && this.shiftDelay >= settings.DAS) {
+      // do nothing
+    }
+  }
+}
 Piece.prototype.checkShift = function() {
   // Shift key pressed event.
   if (keysPushing & flags.moveLeft) {
@@ -201,11 +288,13 @@ Piece.prototype.checkShift = function() {
     this.arrDelay = 0;
     this.shiftReleased = true;
     this.shiftDir = -1;
+    this.blockedDir = 0;
   } else if (this.shiftDir === -1 && keysPopping & flags.moveLeft && keysDown & flags.moveRight) {
     this.shiftDelay = 0;
     this.arrDelay = 0;
     this.shiftReleased = true;
     this.shiftDir = 1;
+    this.blockedDir = 0;
   } else if (keysPopping & flags.moveRight && keysDown & flags.moveLeft) {
     this.shiftDir = -1;
   } else if (keysPopping & flags.moveLeft && keysDown & flags.moveRight) {
@@ -215,40 +304,53 @@ Piece.prototype.checkShift = function() {
     this.arrDelay = 0;
     this.shiftReleased = true;
     this.shiftDir = 0;
+    this.blockedDir = 0;
   }
   // Handle events
-  /* farter */
-  // here problem causes it taking 2 frames to move 1 grid even ARR=1
-  var dascut = [false,true][(settings.DASCut || 0)]
+  var dascut = settings.DASCut || 0; //0=synchro
   //if (dascut) {
   //  this.ShiftDir = 0;
   //  console.log("interrupt")
   //}
   if (this.shiftDir) {
+    // first "shift" intent is not buffered, but autorepeat ones are buffered
     // 1. When key pressed instantly move over once.
     if (this.shiftReleased && settings.DAS !== 0) {
-      this.shift(this.shiftDir);
-      this.shiftDelay++;
+      this.shift(this.shiftDir); // might be blocked! then enters the next state but still trying
       this.shiftReleased = false;
+      this.shiftDelay++;
     // 2. Apply DAS delay
     } else if (this.shiftDelay < settings.DAS) {
       this.shiftDelay++;
     // 3. Once the delay is complete, move over once.
-    //     Increment delay so this doesn't run again.
-    // if arr=0, repeat here, not entering 4
-    // but if dascut, let shiftdelay == das + 1 and arrdelay = 0 which is not < arr
-    } else if (this.shiftDelay === settings.DAS) {
-      this.shift(this.shiftDir);
-      if (settings.ARR !== 0 || dascut) this.shiftDelay++;
+    //     set shiftDelay to Infinity so this doesn't run again.
+    //     will work with variable DAS.
+    // if das=0, first keydown (and unfrozen move key) enter here directly
+    // if arr=0, repeat here, never entering phase 4
+    // but if forever dascut, let shiftdelay == -inf and lock at phase 2
+    } else if (this.shiftDelay < Infinity && this.shiftDelay >= settings.DAS) {
+      if(this.shift(this.shiftDir)) {
+        if (settings.ARR !== 0) this.shiftDelay = Infinity; // enter phase 4
+      } else {
+        // if blocked, enter phase 4 in "blocked" state, for simplicity, but only when arr!=0
+        if (settings.ARR !== 0) {
+          this.shiftDelay = Infinity;
+          this.arrDelay = settings.ARR;
+        }
+      }
+      if(dascut === setting.DASCut.length-1 && settings.ARR === 0) {
+         // forever cut, special one-shot das
+         // for finite cut: returns into pre-arr phase, more done at other places
+        this.shiftDelay = -Infinity;
+      }
     // 4. Apply ARR delay
-    } else if (this.arrDelay < settings.ARR) {
+    } else {
       this.arrDelay++;
     // 5. If ARR Delay is full, move piece, and reset delay and repeat.
-    /*
-    } else if (this.arrDelay === settings.ARR && settings.ARR !== 0) {
-    */
-      if (this.arrDelay === settings.ARR && settings.ARR !== 0) {
-        this.shift(this.shiftDir);
+      if (this.arrDelay >= settings.ARR && settings.ARR !== 0) {
+        if(this.shift(this.shiftDir)) {
+          this.arrDelay = 0;
+        }
       }
     }
   }
@@ -261,9 +363,8 @@ Piece.prototype.checkShift = function() {
   }
 }
 Piece.prototype.shift = function(direction) {
-  this.arrDelay = 0;
   var shifted = false;
-  if (settings.ARR === 0 && this.shiftDelay === settings.DAS) {
+  if (settings.ARR === 0 && this.shiftDelay >= settings.DAS) {
     while (true) {
       if (this.moveValid(direction, 0, this.tetro)) {
         this.x += direction;
@@ -277,8 +378,19 @@ Piece.prototype.shift = function(direction) {
     this.x += direction;
     shifted = true;
   }
-  if(shifted){
+  if (shifted) {
+    this.arrDelay = 0;
+    if(settings.ARR === 0 && this.shiftDelay >= settings.DAS) {
+      this.blockedDir = direction;
+    } else {
+      this.blockedDir = 0;
+    }
     sound.playse("move");
+    return true;
+  } else {
+    // preserve arrDelay
+    this.blockedDir = direction;
+    return false;
   }
 }
 Piece.prototype.multiShift = function(direction, count) {
@@ -291,6 +403,7 @@ Piece.prototype.multiShift = function(direction, count) {
   if(shifted){
     sound.playse("move");
   }
+  // no handling about blocked or not and shiftDir?
 }
 Piece.prototype.shiftDown = function() {
   if (this.moveValid(0, 1, this.tetro)) {
@@ -384,7 +497,7 @@ Piece.prototype.checkInfGravity = function() {
 }
 
 Piece.prototype.checkLock = function() {
-  if (landed) {
+  if (this.landed) {
     this.y = Math.floor(this.y); //@sega
     if (this.lockDelay >= this.lockDelayLimit) {
       this.dead = true;
@@ -395,6 +508,10 @@ Piece.prototype.checkLock = function() {
         sound.playse("lock");
       }
       this.dirty = true;
+      
+      this.blockedDir = 0; // reset // shift key in ARE doesn't count as blocked
+      this.checkDasCut();
+      
       if(gameState === 9){ // lockout! don't spawn next piece
         return;
       }else{
@@ -417,7 +534,7 @@ Piece.prototype.checkLock = function() {
           } else if (gametype === 1 && gameparams.marathonType === 1) {
             this.areLimit = 11;
           } else {
-            this.areLimit = 0;
+            this.areLimit = settings.AREDelay || 0;
           }
           if (this.areLimit === 0) { // IRS IHS not possible
             this.new(preview.next()); // may die-in-one-frame
@@ -436,20 +553,21 @@ Piece.prototype.update = function() {
   if (this.moveValid(0, 1, this.tetro)) {
     this.checkFall();
   }
-  landed = !this.moveValid(0, 1, this.tetro);
-  if (landed) {
-    this.lockDelay++;
-  }
+  this.landed = !this.moveValid(0, 1, this.tetro);
   this.checkLock();
 }
 
 Piece.prototype.draw = function() {
   clear(activeCtx);
   if (!this.dead) {
-    this.drawGhost();
+    var blockedDir=0; // slight offset
+    if (RotSys[settings.RotSys].moveThenRot) { // temporary.. maybe another setting?
+      blockedDir = this.blockedDir;
+    }
+    this.drawGhost(blockedDir);
     if (settings.Ghost !== 3) {
       var a = void 0;
-      if (landed) {
+      if (this.landed) {
         a = this.lockDelay / this.lockDelayLimit;
         if (this.lockDelayLimit === 0)
           a = 0;
@@ -457,22 +575,24 @@ Piece.prototype.draw = function() {
       }
       draw(
         this.tetro, this.x, Math.floor(this.y) - stack.hiddenHeight,
-        activeCtx, RotSys[settings.RotSys].color[this.index], a
+        activeCtx, RotSys[settings.RotSys].color[this.index], a, blockedDir
       );
     }
   }
 }
 
-Piece.prototype.drawGhost = function() {
+Piece.prototype.drawGhost = function(blockedDir) {
   activeCtx.globalAlpha = 0.4;
-  if (!landed) {
+  if (!this.landed) {
     var color = 0;
     if (settings.Ghost === 0 || settings.Ghost === 1) {
       if (settings.Ghost === 1) {
         color = RotSys[settings.RotSys].color[this.index];
       }
       draw(
-        this.tetro, this.x, Math.floor(this.y + this.getDrop(Infinity)) - stack.hiddenHeight, activeCtx, color);
+        this.tetro, this.x, Math.floor(this.y + this.getDrop(Infinity)) - stack.hiddenHeight,
+        activeCtx, color, 0, blockedDir
+      );
     }
   }
   activeCtx.globalAlpha = 1;

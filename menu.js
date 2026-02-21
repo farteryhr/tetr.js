@@ -1,4 +1,4 @@
-var version       = '0.62';
+var version       = '0.70';
 var setLoop;
 var arrowReleased = true;
 var arrowDelay    = 0;
@@ -243,13 +243,30 @@ function right(e) {
 /**
  * LocalStorage functions
  */
+function updateSettingSpan(span, s) {
+  $setText(span, setting[s][mySettings[s]]);
+  var value=mySettings[s];
+  if (s === "DAS") {
+    span.style.color="hsl("+((value*20+300)%360)+",100%,75%)";
+  }
+  if (s === "ARR") {
+    span.style.color="hsl("+((Math.sqrt(value)*60+60)%360)+",100%,75%)";
+  }
+  if (s === "LockDelay") {
+    span.style.color="hsl(0,100%,"+(Math.min(100,50+Math.sqrt(value)*15))+"%)";
+  }
+  if (s === "AREDelay") {
+    span.style.color="hsl(0,0%,"+(Math.max(20,100-Math.sqrt(value)*20))+"%)";
+  }
+  
+}
 function saveSetting(s) {
   if (localStorage === void 0) {
     localStorage = {};
   }
   localStorage['version'] = version;
 
-  $setText($$(s).getElementsByTagName('span')[0], setting[s][mySettings[s]]);
+  updateSettingSpan($$(s).getElementsByTagName('span')[0], s);
 
   localStorage['settings'] = JSON.stringify(mySettings);
 }
@@ -298,7 +315,7 @@ for (var s in settingName) {
 
   div.id              = s;
   $setText(sname, settingName[s]);
-  $setText(span, setting[s][mySettings[s]]);
+  updateSettingSpan(span, s);
   iLeft.className     = 'material-icons left';
   iRight.className    = 'material-icons right';
   $setText(iLeft, "\uE314");
@@ -332,4 +349,7 @@ function tryUpgradeSetting(sett){
       return oldv + 1;
     }
   });
+  if(sett.AREDelay === void 0){
+    sett.AREDelay = 0;
+  }
 }

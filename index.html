@@ -39,19 +39,20 @@
     <table id="stats">
       <tr>
         <th id="score">0</th>
-        <th>SCORE 分</th>
+        <th class="statslabel">SCORE 分</th>
       </tr>
       <tr>
         <td id="levelline"><div id="level"></div><div id="line">0</div></td>
-        <th>LINE 行</th>
+        <th class="statslabel">LINE 行</th>
       </tr>
       <tr>
         <td id="piece">0</td>
-        <th>PIECE 块</th>
+        <th class="statslabel">PIECE 块</th>
       </tr>
       <tr>
         <th id="penalty"></th>
-        <th id="time"><canvas></canvas></th>
+        <th id="time"><canvas style="vertical-align: bottom;"></canvas></th>
+        <th id="modeid">&nbsp;</th>
       </tr>
     </table>
   </div>
@@ -66,7 +67,7 @@
     </div>
 
     <nav class="menu on">
-      <h1>Tetr.js - Dig v0.68</h1>
+      <h1>Tetr.js - Dig v0.71</h1>
       <p>
         original: <a class="link" href="//simon.lc/tetr.js/">&gt;&gt;simonlc</a><br/>
         enhanced: <a class="link" href="//doktorocelot.com/tetr.js/">&gt;&gt;drocelot</a><br/>
@@ -187,13 +188,14 @@
 
     <nav id="replay" class="menu">
       <h2>Replay 回放数据</h2>
-
       <p>Ctrl+C 复制 / Ctrl+V 粘贴</p>
       <textarea id="replaydata" spellcheck="false"></textarea>
       <ul>
         <li><a class="btn" onclick="tryreplaydata()">Watch 观看</a></li>
         <li><a class="btn" onclick="menu(void 0,-1)">Back 返回</a></li>
       </ul>
+      
+      <p><small><a class="link" href="../tetr.js.0.68">&gt;&gt;v0.68 for old replay</a></small></p>
     </nav>
 
     <nav class="menu">
