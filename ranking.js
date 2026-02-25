@@ -1,29 +1,3 @@
-function XMLHTTP(url,obj,fun)
-{
-  var xmlhttp=null;
-  var handler=function(){
-    fun(xmlhttp);
-  }
-  if (window.XMLHttpRequest)
-  {// code for all new browsers
-    xmlhttp=new XMLHttpRequest();
-  }
-  else if (window.ActiveXObject)
-  {// code for IE5 and IE6
-    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  if (xmlhttp!=null)
-  {
-    xmlhttp.onreadystatechange=handler;
-    xmlhttp.open("POST",url,true);
-    xmlhttp.send(JSON.stringify(obj));
-  }
-  else
-  {
-    alert("Your browser does not support XMLHTTP.");
-  }
-}
-
 function handleranking(xmlhttp)
 {
   if (xmlhttp.readyState==4)
@@ -192,9 +166,9 @@ var hostaddr=
 function submitscore(obj)
 {
   console.log(obj);
-  XMLHTTP(hostaddr, obj, handleranking);
+  XmlHttpPostJson(hostaddr, obj, handleranking);
 }
 function fetchreplay(key)
 {
-  XMLHTTP(hostaddr, {req:"replay", replaykey:key}, handlereplay);
+  XmlHttpPostJson(hostaddr, {req:"replay", replaykey:key}, handlereplay);
 }

@@ -306,8 +306,16 @@ function resize() {
   }
   //}
 }
+
+function loadSound(){ //preload
+  if(settings.Sound !== 0){
+    sound.init();
+  }
+  sound.setsebank(settings.Sound);
+}
 addEventListener('resize', resize, false);
 addEventListener('load', resize, false);
+addEventListener('load', loadSound, false);
 
 /**
  * ========================== Model ===========================================
@@ -374,11 +382,7 @@ function init(gt, params) {
   if(gametype === void 0) //sometimes happens.....
     gametype = 0;
 
-  //html5 mobile device sound
-  if(settings.Sound !== 0){
-    sound.init();
-  }
-  sound.setsebank(settings.Sound);
+  loadSound(); // can omit? // also on menu exit?
 
   //Reset
   column = 0;

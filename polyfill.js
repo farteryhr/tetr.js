@@ -7,6 +7,35 @@ function ObjectClone(obj) {
   return copy;
 }
 
+function XmlHttpPostJson(url,obj,fun){
+  var xmlhttp=new XMLHttpRequest();
+  var handler=function(){
+    fun(xmlhttp);
+  }
+  xmlhttp.onreadystatechange=handler;
+  xmlhttp.open("POST",url,true);
+  xmlhttp.send(JSON.stringify(obj));
+}
+
+function XmlHttpGetArrBuf(url,fun){
+  var xmlhttp=new XMLHttpRequest();
+  var handler=function(){
+    fun(xmlhttp);
+  }
+  var retrycount=0;
+  xmlhttp.onreadystatechange=handler;
+  xmlhttp.ontimeout=function(){
+    setTimeout(function(){
+    console.log("xmlhttp get timeout! retrying in "+retrucount+"s");
+      xmlhttp.send();
+    },retrycount*1000);
+    retrycount++;
+  }
+  xmlhttp.responseType="arraybuffer";
+  xmlhttp.open("GET",url,true);
+  xmlhttp.send();
+}
+
 function $$(id){
   return document.getElementById(id);
 }
