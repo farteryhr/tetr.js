@@ -337,17 +337,28 @@ Stack.prototype.addPiece = function(piece) {
         garbage *= ~~(lines/2);
       }else if(gameparams.backFire === 4){
         garbage = +(combo >= 2 || lineClear >= 2 || isSpin || isPC)
+      }else if(gameparams.backFire === 5){
+        garbage = lineClear===0?0:lineClear-1;
+      }else if(gameparams.backFire === 6){
+        garbage = (+(lineClear==01))*2;
       }
       if(garbage !== 0) {
         if(gameparams.backFire === 1){
           for(var y = 0; y < garbage; y++){
             this.rowRise(bottomRow, piece);
           }
-        }else if(gameparams.backFire === 2 || gameparams.backFire === 3){
+        }else if([2,3].indexOf(gameparams.backFire)>=0){
           var hole = ~~(rng.next() * 10);
           var arrRow = [8,8,8,8,8,8,8,8,8,8];
           arrRow[hole] = 0;
           for(var y = 0; y < garbage; y++){
+            this.rowRise(arrRow, piece);
+          }
+        }else if([5,6].indexOf(gameparams.backFire)>=0){
+          for(var y = 0; y < garbage; y++){
+            var hole = ~~(rng.next() * 10);
+            var arrRow = [8,8,8,8,8,8,8,8,8,8];
+            arrRow[hole] = 0;
             this.rowRise(arrRow, piece);
           }
         }else if(gameparams.backFire === 4){

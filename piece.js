@@ -170,8 +170,9 @@ Piece.prototype.rotate = function(direction) {
         kickList = [[ 0, 0],[+1, 0],[-1, 0],[ 0,-1]];
       else
         kickList = [[ 0, 0],[+1, 0],[-1, 0]];
+      dxMult = direction === 2 ? 1 : direction;
     }
-    this.tryKickList(kickList, rotated, newPos, offsetX, offsetY);
+    this.tryKickList(kickList, rotated, newPos, offsetX, offsetY, dxMult);
   } else {
     var kickIndex = [ 1, -1 ,2].indexOf(direction); // kickDataDirectionIndex
     var kickList;
@@ -435,7 +436,7 @@ Piece.prototype.getDrop = function(distance) {
   return i - 1;
 }
 Piece.prototype.hold = function() {
-  if (gametype === 1 && gameparams.marathonType === 1){
+  if (gameparams.oneNext === 1){
     return;
   }
   var temp = hold.piece;

@@ -492,6 +492,12 @@ function init(gt, params) {
     if (settings.SoftDrop > 7){
       settings.SoftDrop = 7;
     }
+    gameparams.oneNext = 1;
+  }
+  if (gameparams.backFire === 5 || gameparams.backFire === 6) {
+    gameparams.oneNext = 1;
+  }
+  if (gameparams.oneNext){
     if (settings.Next > 1){
       settings.Next = 1;
     }
@@ -1311,7 +1317,7 @@ function getmodeid(){
       (gameparams.lineLimit?""+gameparams.lineLimit:"") +
       (gameparams.widthLimit?("width"+gameparams.widthLimit):"") +
       (gameparams.pieceSet?["","noi","alli"][gameparams.pieceSet]:"") +
-      (gameparams.backFire?["","bf1","bf2","bf3","bf4"][gameparams.backFire]:"")+
+      (gameparams.backFire?["","bf1","bf2","bf3","bf4","bf5","bf6"][gameparams.backFire]:"")+
       (gameparams.delType?["","whole"][gameparams.delType]:"")+
       (gameparams.triplet?["","triplet"][gameparams.triplet]:"")+
       (gameparams.symmetry?["","symmetry"][gameparams.symmetry]:"")+
