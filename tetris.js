@@ -21,6 +21,7 @@ var divdebug = $$('divdebug');
 function debugmsg(s){
   $setText(divdebug, s);
 }
+//window.onerror=function(message, source, lineno, colno, error){debugmsg(message+" "+source+" "+lineno+":"+colno+" "+error);};
 
 var msg = $$('msg');
 var msgdiv = $$('msgdiv');
@@ -315,7 +316,7 @@ function loadSound(){ //preload
 }
 addEventListener('resize', resize, false);
 addEventListener('load', resize, false);
-addEventListener('load', loadSound, false);
+// addEventListener('load', loadSound, false); // audio tags  gets polluted on ios7
 
 /**
  * ========================== Model ===========================================
@@ -485,6 +486,7 @@ function init(gt, params) {
     lastPiecesSet = 0;
     digZenBuffer = 0;
   }
+  // onenext: implicitly nohold
   if (gametype === 1 && gameparams.marathonType === 1){
     if (settings.ARR < 1){
       settings.ARR = 1;
@@ -752,7 +754,7 @@ function makeSprite() {
     ['#ffffff', '#ffffff', '#ffffff', '#888888', '#4d4d4d'],
   ];
   var tgm = [
-    ['#ababab', '#5a5a5a', '#9b9b9b', '#626262'],
+    ['#7b7b7b', '#303030', '#6b6b6b', '#363636'],
     ['#00e8f0', '#0070a0', '#00d0e0', '#0080a8'],
     ['#00a8f8', '#0000b0', '#0090e8', '#0020c0'],
     ['#f8a800', '#b84000', '#e89800', '#c85800'],
@@ -761,88 +763,122 @@ function makeSprite() {
     ['#f828f8', '#780078', '#e020e0', '#880088'],
     ['#f08000', '#a00000', '#e86008', '#b00000'],
     ['#7b7b7b', '#303030', '#6b6b6b', '#363636'],
-    ['#ababab', '#5a5a5a', '#9b9b9b', '#626262'],
+    ['#a4a4a4', '#404040', '#8f8f8f', '#484848'],
   ];
 
   spriteCanvas.width = cellSize * 10;
   spriteCanvas.height = cellSize;
   for (var i = 0; i < 10; i++) {
-    var x = i * cellSize;
+    var s = cellSize;
+    spriteCtx.translate(i * cellSize, 0);
     if (settings.Block === 0) {
       // Shaded
       spriteCtx.fillStyle = shaded[i][1];
-      spriteCtx.fillRect(x, 0, cellSize, cellSize);
+      spriteCtx.fillRect(0, 0, s, s);
 
       spriteCtx.fillStyle = shaded[i][3];
-      spriteCtx.fillRect(x, cellSize / 2, cellSize, cellSize / 2);
+      spriteCtx.fillRect(0, s / 2, s, s / 2);
 
       spriteCtx.fillStyle = shaded[i][0];
       spriteCtx.beginPath();
-      spriteCtx.moveTo(x, 0);
-      spriteCtx.lineTo(x + cellSize / 2, cellSize / 2);
-      spriteCtx.lineTo(x, cellSize);
+      spriteCtx.moveTo(0, 0);
+      spriteCtx.lineTo(s / 2, s / 2);
+      spriteCtx.lineTo(0, s);
       spriteCtx.fill();
 
       spriteCtx.fillStyle = shaded[i][2];
       spriteCtx.beginPath();
-      spriteCtx.moveTo(x + cellSize, 0);
-      spriteCtx.lineTo(x + cellSize / 2, cellSize / 2);
-      spriteCtx.lineTo(x + cellSize, cellSize);
+      spriteCtx.moveTo(s, 0);
+      spriteCtx.lineTo(s / 2, s / 2);
+      spriteCtx.lineTo(s, s);
       spriteCtx.fill();
     } else if (settings.Block === 1) {
       // Flat
       spriteCtx.fillStyle = shaded[i][0];
-      spriteCtx.fillRect(x, 0, cellSize, cellSize);
+      spriteCtx.fillRect(0, 0, s, s);
     } else if (settings.Block === 2) {
       // Glossy
-      var k = Math.max(~~(cellSize * 0.1), 1);
+      var k = Math.max(~~(s * 0.1), 1);
 
-      var grad = spriteCtx.createLinearGradient(x, 0, x + cellSize, cellSize);
+      var grad = spriteCtx.createLinearGradient(0, 0, s, s);
       grad.addColorStop(0.5, glossy[i][3]);
       grad.addColorStop(1, glossy[i][4]);
       spriteCtx.fillStyle = grad;
-      spriteCtx.fillRect(x, 0, cellSize, cellSize);
+      spriteCtx.fillRect(0, 0, s, s);
 
-      var grad = spriteCtx.createLinearGradient(x, 0, x + cellSize, cellSize);
+      var grad = spriteCtx.createLinearGradient(0, 0, s, s);
       grad.addColorStop(0, glossy[i][2]);
       grad.addColorStop(0.5, glossy[i][1]);
       spriteCtx.fillStyle = grad;
-      spriteCtx.fillRect(x, 0, cellSize - k, cellSize - k);
+      spriteCtx.fillRect(0, 0, s - k, s - k);
 
-      var grad = spriteCtx.createLinearGradient(x + k, k, x + cellSize - k, cellSize - k);
+      var grad = spriteCtx.createLinearGradient(k, k, s - k, s - k);
       grad.addColorStop(0, shaded[i][0]);
       grad.addColorStop(0.5, glossy[i][0]);
       grad.addColorStop(0.5, shaded[i][0]);
       grad.addColorStop(1, glossy[i][0]);
       spriteCtx.fillStyle = grad;
-      spriteCtx.fillRect(x + k, k, cellSize - k * 2, cellSize - k * 2);
+      spriteCtx.fillRect(k, k, s - k * 2, s - k * 2);
 
-    } else if (settings.Block === 3 || settings.Block === 4) {
-      var k = Math.max(~~(cellSize * 0.125), 1);
+    } else if (settings.Block === 3) {
+      // Arika
+      var k = Math.max(~~(s * 0.125), 1);
 
       spriteCtx.fillStyle = tgm[i][1];
-      spriteCtx.fillRect(x, 0, cellSize, cellSize);
+      spriteCtx.fillRect(0, 0, s, s);
       spriteCtx.fillStyle = tgm[i][0];
-      spriteCtx.fillRect(x, 0, cellSize, ~~(cellSize / 2));
+      spriteCtx.fillRect(0, 0, s, ~~(s / 2));
 
-      var grad = spriteCtx.createLinearGradient(x, k, x, cellSize - k);
+      var grad = spriteCtx.createLinearGradient(0, k, 0, s - k);
       grad.addColorStop(0, tgm[i][2]);
       grad.addColorStop(1, tgm[i][3]);
       spriteCtx.fillStyle = grad;
-      spriteCtx.fillRect(x + k, k, cellSize - k*2, cellSize - k*2);
+      spriteCtx.fillRect(k, k, s - k*2, s - k*2);
 
-      var grad = spriteCtx.createLinearGradient(x, k, x, cellSize);
+      var grad = spriteCtx.createLinearGradient(0, k, 0, s);
       grad.addColorStop(0, tgm[i][0]);
       grad.addColorStop(1, tgm[i][3]);
       spriteCtx.fillStyle = grad;
-      spriteCtx.fillRect(x, k, k, cellSize - k);
+      spriteCtx.fillRect(0, k, k, s - k);
 
-      var grad = spriteCtx.createLinearGradient(x, 0, x, cellSize - k);
+      var grad = spriteCtx.createLinearGradient(0, 0, 0, s - k);
       grad.addColorStop(0, tgm[i][2]);
       grad.addColorStop(1, tgm[i][1]);
       spriteCtx.fillStyle = grad;
-      spriteCtx.fillRect(x + cellSize - k, 0, k, cellSize - k);
+      spriteCtx.fillRect(s - k, 0, k, s - k);
+      
+    } else if(settings.Block === 4) {
+      // Classic
+      var k = Math.max(~~(s * 0.125 + 0.25), 1);
+      var b1 = Math.max(~~(s * 0.03125 + 0.5), 0);
+      var b2 = Math.max(~~(s * 0.03125 + 0.0), 0);
+      s -= b1 + b2;
+      
+      spriteCtx.translate(b1, b1);
+      spriteCtx.fillStyle = tgm[i][0];
+      spriteCtx.beginPath();
+      spriteCtx.moveTo(0, 0);
+      spriteCtx.lineTo(s, 0);
+      spriteCtx.lineTo(s - k, k);
+      spriteCtx.lineTo(k, k);
+      spriteCtx.lineTo(k, s - k);
+      spriteCtx.lineTo(0, s);
+      spriteCtx.fill();
+      
+      spriteCtx.fillStyle = tgm[i][3];
+      spriteCtx.beginPath();
+      spriteCtx.moveTo(s, 0);
+      spriteCtx.lineTo(s - k, k);
+      spriteCtx.lineTo(s - k, s - k);
+      spriteCtx.lineTo(k, s - k);
+      spriteCtx.lineTo(0, s);
+      spriteCtx.lineTo(s, s);
+      spriteCtx.fill();
+      
+      spriteCtx.fillStyle = tgm[i][2];
+      spriteCtx.fillRect(k, k, s - 2 * k, s - 2 * k);
     }
+    spriteCtx.setTransform(1,0,0,1,0,0);
   }
 }
 
@@ -947,7 +983,9 @@ function update() {
 
   do { // for breaking
     if (flags.holdPiece & keysPushing) {
-      piece.hold(); // may cause death
+      if(!gameparams.oneNext){
+        piece.hold(); // may cause death
+      }
     }
     if (gameState === 9) {
       break;
@@ -1117,8 +1155,7 @@ function gameLoop() {
         piece.checkShiftInARE();
         
         if (flags.holdPiece & keysPushing) {
-          if (gametype === 1 && gameparams.marathonType === 1){
-          } else {
+          if (!gameparams.oneNext){
             piece.ihs = true;
             //console.log("IHS");
           }

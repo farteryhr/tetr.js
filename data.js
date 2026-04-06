@@ -545,7 +545,7 @@ var Color5000 = [7, 6, 8, 4, 5, 1, 2];
 var ColorDX = [9, 7, 2, 4, 3, 5, 6];
 var ColorMybo = [5, 6, 7, 4, 3, 2, 1];
 var ColorQuadra = [5, 4, 6, 3, 1, 2, 7];
-var ColorGameBoy = [9, 2, 7, 8, 7, 9, 2];
+var ColorGameBoy = [9, 4, 5, 8, 5, 9, 4];
 var ColorTNET = [2, 5, 6, 4, 2, 4, 7];
 var ColorCDi = [3, 7, 5, 9, 6, 2, 4];
 var ColorSHC = [2, 4, 5, 7, 1, 3, 6];
@@ -1112,7 +1112,7 @@ var setting = {
   Size: ['Auto', 'Small', 'Medium', 'Large', 'Larger'],
   Sound: ['Off', 'Memes', 'Dr.Ocelot'],
   Volume: range(0, 101),
-  Block: ['Shaded', 'Solid', 'Glossy', 'Arika', 'World'],
+  Block: ['Shaded', 'Plain', 'Glossy', 'Arika', 'Classic'],
   Ghost: ['Grey', 'Colored', 'Off', 'Hidden'],
   Grid: ['Off', 'On'],
   Outline: ['Off', 'On', 'Hidden', 'Only'],

@@ -478,7 +478,7 @@ Stack.prototype.draw = function() {
   if(settings.Outline === 0 || settings.Outline === 1 ||
     (settings.Outline === 2 && (gameState === 9 || gameState === 1))
   ) {
-    draw(this.grid, 0, -this.hiddenHeight, stackCtx, void 0, 0.3);
+    draw(this.grid, 0, -this.hiddenHeight, stackCtx, void 0, [0.15, 0.3, 0.3][settings.Outline]);
   }
   
   if(gameparams.symmetry === 1 && timePenalty > 0){

@@ -16,7 +16,6 @@ function Sound() {
       }
     }
   }
-  
   var sebankwavelist={
     meme:"bravo,endingstart,erase1,erase2,erase3,erase4,gameover,garbage,lock,tspin0,tspin1,tspin2,tspin3".split(","),
     drocelot:"bravo,endingstart,erase1,erase2,erase3,erase4,gameover,garbage,lock,move,rotate,hold,ready,go,harddrop,tspin0,tspin1,tspin2,tspin3".split(","),
@@ -51,7 +50,7 @@ function Sound() {
                 if (xmlhttp.status==200){
                   ctx.decodeAudioData(xmlhttp.response,function(audioBuf){
                     dest[iname].insts.push(audioBuf);
-                    // console.log("audio decode success "+iname);
+                    // console.log("audio decode success "+iname+":"+audioBuf.length);
                   },function(e){
                     console.log("audio decode error "+e.message);
                   })
@@ -62,22 +61,52 @@ function Sound() {
         }else{
           var wave = document.createElement("AUDIO");
           wave.src=url;
+          wave.setAttribute("preload","none");
+          wave.setAttribute("x-webkit-airplay","deny");
+          wave.setAttribute("disableremoteplayback","true");
+          wave.removeAttribute("controls");
           wave.load();
           dest[iname].insts.push(wave);
         }
       }
     }
   }
+  var checkwavebank=function(bank){ // sometimes blocked by calling "load" not in specified user interaction
+    for(var iname in bank){
+      var insts=bank[iname].insts;
+      for(var j=0;i<insts.length;j++){
+        if(webaudio){
+          // has retry
+        }else{
+          var wave = insts[i];
+          if(wave.readyState===0){
+            var url=wave.src;
+            insts[i]=null;
+            wave=document.createElement("AUDIO");
+            wave.src=url;
+            
+            wave.load(); // on some browser, initial preload doesn't work, even not working in rAF, even not working like this
+          }
+        }
+      }
+    }
+  
+  }
   this.init=function(){
     if(itworks===false){
-      if(typeof ArrayBuffer==="function"
-        && typeof AudioContext==="function"
-        && typeof AudioBufferSourceNode==="function"
-        && window.location.protocol!=="file:"){
-        var AC=window.AudioContext||window.webkitAudioContext;
+      var AC=window.AudioContext||window.webkitAudioContext;
+      if((window.ArrayBuffer!==void 0)
+        && AC && AC.prototype.createBufferSource && AC.prototype.decodeAudioData
+        && window.location.protocol!=="file:"
+        && !( 
+          /iP.{1,4} OS 6_/i.test(navigator.userAgent) ||
+          /iP.{1,4} OS 7_0_/i.test(navigator.userAgent) // not sure
+        )
+      ){
         ctx=new AC();
         itworks=true;
         webaudio=true;
+        debugmsg("sound: using webaudio")
         console.log("sound: using webaudio");
         return;
       }
@@ -86,10 +115,12 @@ function Sound() {
         wave.src="se/meme/gameover.mp3";
         wave.load();
         itworks=true;
+        debugmsg("sound: using audio tag")
         console.log("sound: using audio tag");
         if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
           lowMode = true;
-          console.log("sound: low mode");
+          debugmsg("sound: single mode")
+          console.log("sound: single mode");
         }
       }catch(e){
         alert("sound: doesn't work.")
@@ -110,15 +141,41 @@ function Sound() {
               return; // not yet loaded
             }
             resumeAC(function(){
+              // https://webaudioapi.com/book/Web_Audio_API_Boris_Smus_html/appa.html
               var source = ctx.createBufferSource();
               source.buffer = wave;
-              source.connect(ctx.destination);
-              source.start();
+              source.loop = false;
+              if(typeof source.gain==="number"){
+                source.gain=1;
+              } else if(source.gain) { // ios6-7 audioparam but fail on my 7.0.4
+                source.gain.setValueAtTime(1, ctx.currentTime);
+              }
+              var gain = ctx.createGain();
+              gain.gain.setValueAtTime(settings.Volume/100, ctx.currentTime);
+              
+              source.connect(gain);
+              gain.connect(ctx.destination);
+              // noteGrainOn noteOn noteOff ???
+              if(source.noteOn){ // ios6-7 but fail?
+                source.noteOn(ctx.currentTime+0.001);
+              }else{
+                source.start(ctx.currentTime);
+              }
+              window.setTimeout(function(){
+                if(source.noteOff){
+                  source.noteOff(ctx.currentTime);
+                }else{
+                  source.stop(ctx.currentTime);
+                }
+                source.disconnect(gain);
+                gain.disconnect(ctx.destination);
+              },wave.duration*1000+100);
             });
           }else{ // audiotag
             var wave=wavegrp.insts[wavegrp.curidx++];
             wavegrp.curidx%=wavegrp.insts.length;
             if(wave.tetrjsok || wave.readyState >= 4){
+              wave.pause();
               if(wave.fastSeek && !lowMode){
                 wave.fastSeek(0);
               }else{
@@ -127,6 +184,11 @@ function Sound() {
               wave.volume=settings.Volume/100;
               wave.play();
               wave.tetrjsok=true; // firefox.... ended.. readystate...
+            }else{
+              //if(wave.readyState===0){
+              //  wave.load(); // on some browser, initial preload doesn't work, even not working in rAF
+              //} // may cause lag
+              debugmsg(name+" "+wave.readyState+" "+wave.src)
             }
           }
         }
@@ -136,7 +198,7 @@ function Sound() {
       }
     }
   }
-  this.setsebank=function(bankid){
+  this.setsebank=function(bankid){ // called in click/touchstart
     if(itworks){
       try{
         var bankname=sebankArr[bankid];
@@ -148,6 +210,8 @@ function Sound() {
             if(bankname==="meme"){
               sebank["harddrop"]=sebank["lock"];
             }
+          }else{
+            checkwavebank(waves[bankname]);
           }
           sebank=waves[bankname];
         }else{
